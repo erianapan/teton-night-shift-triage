@@ -1,0 +1,624 @@
+<title>Problem Framing</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+  /* Layout: one column, read top to bottom. Brief, evidence, people, problem,
+     principles, stories, then what is out of scope. Same tokens as system-flow. */
+  :root {
+    --bg: #fbfbfc;
+    --surface: #ffffff;
+    --surface-2: #f3f5f8;
+    --line: #c9d0d9;
+    --ink: #1c2330;
+    --ink-2: #5c6675;
+    --ink-3: #8b94a3;
+    --accent: #7c3aed;
+    --accent-soft: #ede9fe;
+    --now: #b91c1c;
+    --round: #b45309;
+    --later: #64748b;
+
+    --sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0e1116;
+      --surface: #161b22;
+      --surface-2: #1d242e;
+      --line: #333d4a;
+      --ink: #e6edf3;
+      --ink-2: #9aa7b4;
+      --ink-3: #78828f;
+      --accent: #c084fc;
+      --accent-soft: #2a1f3d;
+      --now: #f87171;
+      --round: #fbbf24;
+      --later: #94a3b8;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0e1116;
+    --surface: #161b22;
+    --surface-2: #1d242e;
+    --line: #333d4a;
+    --ink: #e6edf3;
+    --ink-2: #9aa7b4;
+    --ink-3: #78828f;
+    --accent: #c084fc;
+    --accent-soft: #2a1f3d;
+    --now: #f87171;
+    --round: #fbbf24;
+    --later: #94a3b8;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
+  .wrap {
+    max-width: 880px;
+    margin: 0 auto;
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-block: 34px 60px;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+
+  .sub { margin: 8px 0 0; color: var(--ink-2); max-width: 68ch; }
+
+  h2 {
+    margin: 42px 0 14px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--ink-3);
+    font-weight: 600;
+  }
+
+  .brief {
+    margin-top: 26px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 18px 20px;
+  }
+
+  .brief p { margin: 0; }
+  .brief p + p { margin-top: 10px; }
+  .brief .q { font-size: 17px; font-weight: 500; }
+
+  /* evidence */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  @media (max-width: 620px) { .stats { grid-template-columns: 1fr; } }
+
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 16px;
+  }
+
+  .stat .fig {
+    font-family: var(--mono);
+    font-size: 26px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  .stat .cap { color: var(--ink-2); font-size: 13px; margin-top: 6px; }
+  .stat .src { color: var(--ink-3); font-size: 11px; margin-top: 8px; font-family: var(--mono); }
+
+  /* people */
+  .people { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 620px) { .people { grid-template-columns: 1fr; } }
+
+  .person {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+
+  .person[data-primary="true"] { border-color: var(--accent); background: var(--accent-soft); }
+
+  .person .who { font-weight: 600; font-size: 15px; }
+  .person .tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-3);
+    margin-left: 8px;
+  }
+  .person .need { color: var(--ink-2); font-size: 13.5px; margin-top: 6px; }
+
+  /* figure */
+  figure { margin: 18px 0 0; }
+
+  .figbox {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px;
+    overflow-x: auto;
+  }
+
+  svg.tiers { display: block; width: 100%; min-width: 600px; height: auto; }
+  figcaption { margin-top: 11px; color: var(--ink-2); font-size: 13px; max-width: 74ch; }
+
+  .box { fill: var(--surface); stroke: var(--ink-2); stroke-width: 1.6; }
+  .diamond { fill: var(--surface); stroke: var(--accent); stroke-width: 2; }
+  .arrow { stroke: var(--ink-2); stroke-width: 1.7; fill: none; }
+  .t-q { fill: var(--ink); font: 600 13px var(--sans); }
+  .t-title { fill: var(--ink); font: 600 13px var(--sans); }
+  .t-body { fill: var(--ink-2); font: 400 11.5px var(--sans); }
+  .t-edge { fill: var(--ink-2); font: 500 11px var(--sans); }
+  .bar-now { fill: var(--now); }
+  .bar-round { fill: var(--round); }
+  .bar-later { fill: var(--later); }
+
+  /* principles */
+  ol.principles { margin: 0; padding: 0; list-style: none; counter-reset: p; display: grid; gap: 10px; }
+
+  ol.principles li {
+    counter-increment: p;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 14px 16px 14px 52px;
+    position: relative;
+  }
+
+  ol.principles li::before {
+    content: counter(p);
+    position: absolute;
+    left: 16px;
+    top: 14px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    display: grid;
+    place-items: center;
+  }
+
+  ol.principles .p-rule { font-weight: 600; }
+  ol.principles .p-why { color: var(--ink-2); font-size: 13.5px; margin-top: 3px; }
+
+  /* stories */
+  .story {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 0;
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+
+  .story-top {
+    padding: 14px 16px;
+    border-left: 4px solid var(--later);
+    background: var(--surface-2);
+  }
+
+  .story[data-tier="now"] .story-top { border-left-color: var(--now); }
+  .story[data-tier="round"] .story-top { border-left-color: var(--round); }
+
+  .story-id {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-3);
+    letter-spacing: 0.04em;
+  }
+
+  .story-text { font-size: 15.5px; margin-top: 4px; }
+  .story-text b { font-weight: 600; }
+
+  .story-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    border-top: 1px solid var(--line);
+  }
+
+  @media (max-width: 620px) { .story-grid { grid-template-columns: 1fr; } }
+
+  .cell { padding: 13px 16px; min-width: 0; }
+  .cell + .cell { border-left: 1px solid var(--line); }
+  @media (max-width: 620px) { .cell + .cell { border-left: 0; border-top: 1px solid var(--line); } }
+
+  .cell h4 {
+    margin: 0 0 5px;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--ink-3);
+    font-weight: 600;
+  }
+
+  .cell p { margin: 0; font-size: 13.5px; color: var(--ink-2); }
+  .cell p b { color: var(--ink); font-weight: 500; }
+
+  /* scope */
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 620px) { .cols { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 16px;
+  }
+
+  .panel h3 { margin: 0 0 8px; font-size: 14px; font-weight: 600; }
+  .panel ul { margin: 0; padding-left: 18px; color: var(--ink-2); font-size: 13.5px; }
+  .panel li { margin-bottom: 5px; }
+
+  footer {
+    margin-top: 44px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+    color: var(--ink-3);
+    font-size: 12px;
+  }
+
+  footer a { color: var(--ink-2); }
+</style>
+
+<div class="wrap">
+  <h1>Problem framing</h1>
+  <p class="sub">
+    What I set out to answer before drawing anything, the people it is for, and the eight
+    statements the prototype was built against.
+  </p>
+
+  <div class="brief">
+    <p class="q">If a night assistant is alone on a floor of twenty residents at 03:00, what should the phone in her pocket be allowed to ask of her?</p>
+    <p style="color:var(--ink-2); font-size:13.5px">
+      Self-set brief. Teton has solved detection to a high standard and published the numbers.
+      The open question is not what the building can see, it is what a tired person should be
+      asked to do about it.
+    </p>
+  </div>
+
+  <h2>What made it a problem worth taking</h2>
+
+  <div class="stats">
+    <div class="stat">
+      <p class="fig">24.6 &rarr; 11.7</p>
+      <p class="cap">Alerts per resident per day, before and after their alert tuning</p>
+      <p class="src">teton.ai, Apr 2026</p>
+    </div>
+    <div class="stat">
+      <p class="fig">~40%</p>
+      <p class="cap">Of residents still have no fall-prevention alerts at all</p>
+      <p class="src">teton.ai, Apr 2026</p>
+    </div>
+    <div class="stat">
+      <p class="fig">2 / 20</p>
+      <p class="cap">Staff to residents on a night floor, the ratio this screen is read at</p>
+      <p class="src">assumption, to verify on site</p>
+    </div>
+  </div>
+
+  <h2>Who is awake at 03:00</h2>
+
+  <div class="people">
+    <div class="person" data-primary="true">
+      <p class="who">Night assistant<span class="tag">primary</span></p>
+      <p class="need">Holding something, mid-task, half the floor away. Needs one answer: do I stand up, and which door.</p>
+    </div>
+    <div class="person">
+      <p class="who">The other assistant<span class="tag">secondary</span></p>
+      <p class="need">In another corridor. Needs to know which rooms are already covered, and to be reachable without a hunt for a number.</p>
+    </div>
+    <div class="person">
+      <p class="who">The resident<span class="tag">affected</span></p>
+      <p class="need">Either asking for a person, or not able to. Should be reached fast, and not woken by someone checking a number.</p>
+    </div>
+    <div class="person">
+      <p class="who">Night coordinator<span class="tag">secondary</span></p>
+      <p class="need">Off the floor. Called rarely, and when called should already know the room and the resident.</p>
+    </div>
+    <div class="person">
+      <p class="who">Head of care<span class="tag">next morning</span></p>
+      <p class="need">Needs patterns, response times and what to raise at handover. None of it during the night.</p>
+    </div>
+    <div class="person">
+      <p class="who">Family<span class="tag">out of scope here</span></p>
+      <p class="need">Named because decisions about alert thresholds eventually reach them, not because this screen serves them.</p>
+    </div>
+  </div>
+
+  <h2>The problem, stated</h2>
+
+  <div class="brief">
+    <p class="q">The product measures itself in alerts delivered. The person measures the night in walks taken. Nothing on the screen converts one into the other, so the work of deciding is left with the most interrupted person in the building.</p>
+  </div>
+
+  <h2>One question, three answers</h2>
+
+  <figure>
+    <div class="figbox">
+      <svg class="tiers" viewBox="0 0 860 300" role="img"
+           aria-label="An incoming alert passes through one question, does this need a person now, and splits into three tiers: go now, next round, and later, each with a different demand on the nurse's attention.">
+        <defs>
+          <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+          </marker>
+        </defs>
+
+        <!-- arrows first -->
+        <path class="arrow" d="M186,150 L252,150" marker-end="url(#a2)" color="var(--ink-2)"/>
+        <path class="arrow" d="M452,150 L500,70 L544,70" marker-end="url(#a2)" color="var(--ink-2)"/>
+        <path class="arrow" d="M452,150 L500,150 L544,150" marker-end="url(#a2)" color="var(--ink-2)"/>
+        <path class="arrow" d="M452,150 L500,230 L544,230" marker-end="url(#a2)" color="var(--ink-2)"/>
+
+        <!-- incoming -->
+        <rect class="box" x="20" y="120" width="166" height="60" rx="8"/>
+        <text class="t-title" x="36" y="145">An alert fires</text>
+        <text class="t-body" x="36" y="164">03:10, room 05</text>
+
+        <!-- the question -->
+        <path class="diamond" d="M352,92 L452,150 L352,208 L252,150 z"/>
+        <text class="t-q" x="352" y="146" text-anchor="middle">Does this need</text>
+        <text class="t-q" x="352" y="164" text-anchor="middle">a person now?</text>
+
+        <!-- three tiers -->
+        <rect class="bar-now" x="544" y="42" width="4" height="56" rx="2"/>
+        <rect class="box" x="552" y="42" width="288" height="56" rx="8"/>
+        <text class="t-title" x="568" y="66">Go now</text>
+        <text class="t-body" x="568" y="85">Stand up. Room, reason, person, nothing else.</text>
+
+        <rect class="bar-round" x="544" y="122" width="4" height="56" rx="2"/>
+        <rect class="box" x="552" y="122" width="288" height="56" rx="8"/>
+        <text class="t-title" x="568" y="146">On your next round</text>
+        <text class="t-body" x="568" y="165">Fold into the walk you are already making.</text>
+
+        <rect class="bar-later" x="544" y="202" width="4" height="56" rx="2"/>
+        <rect class="box" x="552" y="202" width="288" height="56" rx="8"/>
+        <text class="t-title" x="568" y="226">Later</text>
+        <text class="t-body" x="568" y="245">For the handover. Folded shut until then.</text>
+
+        <text class="t-edge" x="470" y="108" text-anchor="end">yes</text>
+        <text class="t-edge" x="470" y="142" text-anchor="end">soon</text>
+        <text class="t-edge" x="470" y="248" text-anchor="end">no</text>
+      </svg>
+    </div>
+    <figcaption>
+      Every section on the screen is an answer to one question. The product's own categories, critical
+      and watch, describe the alert. These three describe what the person does, which is the only
+      thing being decided at 03:00.
+    </figcaption>
+  </figure>
+
+  <h2>Principles I held the design to</h2>
+
+  <ol class="principles">
+    <li>
+      <p class="p-rule">Name things for the action, never for the alarm</p>
+      <p class="p-why">If a label needs translating into a decision, it has spent attention and bought nothing.</p>
+    </li>
+    <li>
+      <p class="p-rule">Spend attention per decision, not per event</p>
+      <p class="p-why">Two hundred events is not two hundred decisions. The screen should show the decisions.</p>
+    </li>
+    <li>
+      <p class="p-rule">Where before what before who</p>
+      <p class="p-why">You navigate by room number. The name matters once you are walking, not before.</p>
+    </li>
+    <li>
+      <p class="p-rule">If the building can see it, do not ask the person to confirm it</p>
+      <p class="p-why">Taps exist because systems are blind. This one is not.</p>
+    </li>
+    <li>
+      <p class="p-rule">Analysis belongs to the morning</p>
+      <p class="p-why">Charts and trends are real value, delivered to the wrong person at the wrong hour.</p>
+    </li>
+  </ol>
+
+  <h2>The statements the screen was built against</h2>
+
+  <div class="story" data-tier="now">
+    <div class="story-top">
+      <p class="story-id">US-1 · night assistant</p>
+      <p class="story-text">When an alert arrives, I need to know <b>within two seconds whether to stand up</b>, because I am usually holding something or already with a resident.</p>
+    </div>
+    <div class="story-grid">
+      <div class="cell">
+        <h4>The hard part</h4>
+        <p>Severity words describe the alert, not the response. "Critical" still needs translating by the person with the least capacity to translate.</p>
+      </div>
+      <div class="cell">
+        <h4>Decided</h4>
+        <p>Three sections named for the action: <b>Go now</b>, <b>On your 04:00 round</b>, <b>Later</b>. Severity labels deleted entirely.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="story" data-tier="now">
+    <div class="story-top">
+      <p class="story-id">US-2 · night assistant</p>
+      <p class="story-text">When I decide to go, I need <b>the room number before anything else</b>, because that is what I navigate by in a dark corridor.</p>
+    </div>
+    <div class="story-grid">
+      <div class="cell">
+        <h4>The hard part</h4>
+        <p>Resident name feels like the humane thing to lead with, and it is the wrong thing to lead with. It does not tell you which door.</p>
+      </div>
+      <div class="cell">
+        <h4>Decided</h4>
+        <p>Card order is room, reason, person. Room number set largest on the card.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="story" data-tier="now">
+    <div class="story-top">
+      <p class="story-id">US-3 · night assistant</p>
+      <p class="story-text">I need to know <b>why this one is urgent for this resident</b>, because the same bed exit means different things for different people.</p>
+    </div>
+    <div class="story-grid">
+      <div class="cell">
+        <h4>The hard part</h4>
+        <p>The reason has to be visible without being read. A sentence explaining confidence scores is data, and data is not what the moment is for.</p>
+      </div>
+      <div class="cell">
+        <h4>Decided</h4>
+        <p>A short pill beside the name, <b>High fall risk</b>, carrying the per-resident risk the platform already calculates. The explanation moved out of the card.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="story" data-tier="now">
+    <div class="story-top">
+      <p class="story-id">US-4 · night assistant</p>
+      <p class="story-text">I should <b>not have to confirm I am going</b>, because at 03:00 with a possible fall on screen I will not stop to tap a button.</p>
+    </div>
+    <div class="story-grid">
+      <div class="cell">
+        <h4>The hard part</h4>
+        <p>Acknowledgement is how every alerting product knows somebody responded. Remove the tap and you appear to lose the signal.</p>
+      </div>
+      <div class="cell">
+        <h4>Decided</h4>
+        <p>The room reports the arrival instead. Entering marks the alert <b>attended</b>, with nothing tapped. "I am going" survives, demoted, for the walk.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="story" data-tier="now">
+    <div class="story-top">
+      <p class="story-id">US-5 · night assistant</p>
+      <p class="story-text">When something is beyond me, I need <b>help in one tap</b>, and I should not be reading a phone number in a corridor.</p>
+    </div>
+    <div class="story-grid">
+      <div class="cell">
+        <h4>The hard part</h4>
+        <p>Escalation is three different jobs: who is on the floor, hand this one over, go above the floor. Putting all three on every card made none of them usable.</p>
+      </div>
+      <div class="cell">
+        <h4>Decided</h4>
+        <p>Colleague alert sticky at the top. One escalation ladder at thumb height, which turns yellow once the colleague is already coming.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="story" data-tier="now">
+    <div class="story-top">
+      <p class="story-id">US-6 · the other assistant</p>
+      <p class="story-text">I need to know <b>a room is already covered</b>, so we do not both walk to it while a second resident waits.</p>
+    </div>
+    <div class="story-grid">
+      <div class="cell">
+        <h4>The hard part</h4>
+        <p>Attendance has been a personal act recorded on one phone. It needs to be a fact about the building, held in one place.</p>
+      </div>
+      <div class="cell">
+        <h4>Decided</h4>
+        <p>Shared attendance state, so presence suppresses the alert on the other phone and the wall screen at the same moment. Marked as a proposal, since Teton has not published it.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="story" data-tier="round">
+    <div class="story-top">
+      <p class="story-id">US-7 · night assistant</p>
+      <p class="story-text">On my round I want to <b>walk the corridor once</b>, but see the person most likely to need me first.</p>
+    </div>
+    <div class="story-grid">
+      <div class="cell">
+        <h4>The hard part</h4>
+        <p>Those two orders disagree. Sort by risk and you zig-zag the floor. Sort by corridor and a high-risk resident waits behind routine checks.</p>
+      </div>
+      <div class="cell">
+        <h4>Decided</h4>
+        <p>Risk tier first, corridor order within each tier. One walk, and the people who matter most are at the top of it.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="story" data-tier="later">
+    <div class="story-top">
+      <p class="story-id">US-8 · head of care</p>
+      <p class="story-text">I need <b>the night's patterns for handover</b>, and the person on the floor needs them not to be in the way.</p>
+    </div>
+    <div class="story-grid">
+      <div class="cell">
+        <h4>The hard part</h4>
+        <p>The hourly chart is the most attractive thing to build and the least useful thing at 03:00. It was the first thing on screen in version one.</p>
+      </div>
+      <div class="cell">
+        <h4>Decided</h4>
+        <p>Folded shut at the bottom, labelled for the morning meeting. Still one tap away for whoever wants it.</p>
+      </div>
+    </div>
+  </div>
+
+  <h2>Scope</h2>
+
+  <div class="cols">
+    <div class="panel">
+      <h3>Designed here</h3>
+      <ul>
+        <li>The phone screen a floor assistant carries at night</li>
+        <li>Triage, escalation and arrival for one floor, one shift</li>
+        <li>How attendance is shared between the two staff on duty</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>Deliberately not designed</h3>
+      <ul>
+        <li>The wall screen and the desktop, named only where this screen must agree with them</li>
+        <li>Onboarding, settings, and alert configuration</li>
+        <li>Anything a family member sees</li>
+        <li>Day shift, where staffing and interruption patterns are different enough to need their own research</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>What would show this framing is wrong</h2>
+
+  <div class="panel">
+    <ul>
+      <li>If the phone is not actually the primary night surface, and the wall screen carries more of the work than assumed, the whole hierarchy moves.</li>
+      <li>If alerts arriving while staff are mid-task are simply lost rather than deferred, then "Go now" has a hole in it that no sorting fixes.</li>
+      <li>If staff have already stopped believing a particular alert type, the ranking is cosmetic and the real work is rebuilding trust.</li>
+      <li>If nobody opens the shift review, the handover needs a different artefact entirely, not a folded chart.</li>
+    </ul>
+  </div>
+
+  <footer>
+    Synthetic scenario, no Teton data. Figures from
+    <a href="https://www.teton.ai/blog/introducing-optimized-alerts">Introducing Optimized Alerts</a>.
+    The decisions above are traced round by round in <a href="notes/02-design-log.md">notes/02-design-log.md</a>,
+    and the hardware they depend on is drawn in <a href="system-flow.html">system-flow.html</a>.
+  </footer>
+</div>

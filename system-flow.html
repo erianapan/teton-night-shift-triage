@@ -1,0 +1,374 @@
+<title>Teton System Flow</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+  /* Layout: one wide figure, read left to right, with the return loop along the bottom.
+     Light by default, dark when the viewer is dark. */
+  :root {
+    --bg: #fbfbfc;
+    --surface: #ffffff;
+    --line: #c9d0d9;
+    --ink: #1c2330;
+    --ink-2: #5c6675;
+    --ink-3: #8b94a3;
+    --accent: #7c3aed;
+    --accent-soft: #ede9fe;
+    --proposed: #b45309;
+
+    --sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0e1116;
+      --surface: #161b22;
+      --line: #333d4a;
+      --ink: #e6edf3;
+      --ink-2: #9aa7b4;
+      --ink-3: #78828f;
+      --accent: #c084fc;
+      --accent-soft: #2a1f3d;
+      --proposed: #fbbf24;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0e1116;
+    --surface: #161b22;
+    --line: #333d4a;
+    --ink: #e6edf3;
+    --ink-2: #9aa7b4;
+    --ink-3: #78828f;
+    --accent: #c084fc;
+    --accent-soft: #2a1f3d;
+    --proposed: #fbbf24;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  .wrap {
+    max-width: 1060px;
+    margin: 0 auto;
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-block: 32px 56px;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+
+  .sub { margin: 8px 0 0; color: var(--ink-2); max-width: 70ch; }
+
+  .claim {
+    margin: 22px 0 0;
+    padding: 14px 16px;
+    border-left: 3px solid var(--accent);
+    background: var(--accent-soft);
+    border-radius: 0 6px 6px 0;
+    font-size: 15px;
+    max-width: 78ch;
+  }
+
+  figure { margin: 26px 0 0; }
+
+  .figbox {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px;
+    overflow-x: auto;
+  }
+
+  svg.flow { display: block; width: 100%; min-width: 720px; height: auto; }
+
+  figcaption { margin-top: 12px; color: var(--ink-2); font-size: 13px; max-width: 76ch; }
+
+  /* svg classes */
+  .box { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+  .box-dash { fill: none; stroke: var(--proposed); stroke-width: 1.5; stroke-dasharray: 5 4; }
+  .zone { fill: none; stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 5; }
+
+  .t-head { fill: var(--ink-3); font: 600 11px var(--sans); letter-spacing: 0.08em; }
+  .t-title { fill: var(--ink); font: 600 13px var(--sans); }
+  .t-body { fill: var(--ink-2); font: 400 11.5px var(--sans); }
+  .t-mono { fill: var(--ink-2); font: 400 11px var(--mono); }
+  .t-edge { fill: var(--ink-2); font: 400 11px var(--sans); }
+  .t-prop { fill: var(--proposed); font: 500 11px var(--sans); }
+  .t-acc { fill: var(--accent); font: 600 11.5px var(--sans); }
+
+  .arrow { stroke: var(--line); stroke-width: 1.6; fill: none; }
+  .arrow-dash { stroke: var(--proposed); stroke-width: 1.6; fill: none; stroke-dasharray: 5 4; }
+  .arrow-acc { stroke: var(--accent); stroke-width: 2.4; fill: none; }
+  .arrow-dot { stroke: var(--ink-3); stroke-width: 1.2; fill: none; stroke-dasharray: 2 4; }
+
+  .pin { fill: var(--accent); }
+  .pin-t { fill: #ffffff; font: 700 10px var(--sans); }
+
+  .key { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 22px; font-size: 13px; color: var(--ink-2); }
+  .key span { display: inline-flex; align-items: center; gap: 8px; }
+  .swatch { width: 26px; height: 0; border-top: 2px solid var(--line); }
+  .swatch.acc { border-top: 3px solid var(--accent); }
+  .swatch.prop { border-top: 2px dashed var(--proposed); }
+
+  h2 { margin: 36px 0 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-2); }
+
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--ink-3); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
+  td:first-child { white-space: nowrap; font-weight: 500; }
+  .prop-tag { color: var(--proposed); font-weight: 500; }
+
+  footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--ink-3); font-size: 12px; }
+  footer a { color: var(--ink-2); }
+</style>
+
+<div class="wrap">
+  <h1>Where the data comes from, and where it goes</h1>
+  <p class="sub">
+    One scenario, traced through Teton's hardware and surfaces: a possible fall in room 05 at 03:10,
+    and the nurse who reaches it three minutes later.
+  </p>
+
+  <p class="claim">
+    The loop closes inside the room. The nurse walking in at 03:13 is not a confirmation she taps,
+    it is sensor input the building already collects, so the alert can be marked attended with nothing pressed.
+  </p>
+
+  <figure>
+    <div class="figbox">
+      <svg class="flow" viewBox="0 0 1000 660" role="img"
+           aria-label="System flow: ceiling sensor and compute unit in room 05 send alarms to the cloud platform, which ranks an alert to the nurse's phone; the nurse walks to the room, the same sensor detects her arrival, and the platform marks the alert attended on every surface.">
+
+        <defs>
+          <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+          </marker>
+        </defs>
+
+        <!-- column headers -->
+        <text class="t-head" x="30" y="26">IN THE ROOM</text>
+        <text class="t-head" x="398" y="26">CLOUD PLATFORM</text>
+        <text class="t-head" x="742" y="26">WHAT PEOPLE SEE</text>
+
+        <!-- zone outlines -->
+        <rect class="zone" x="22" y="38" width="238" height="300" rx="10"/>
+        <rect class="zone" x="390" y="38" width="230" height="300" rx="10"/>
+        <rect class="zone" x="734" y="38" width="244" height="380" rx="10"/>
+
+        <!-- ROOM 05 -->
+        <rect class="box" x="38" y="56" width="206" height="62" rx="8"/>
+        <text class="t-title" x="52" y="78">Ceiling sensor</text>
+        <text class="t-body" x="52" y="96">Wide angle, infrared,</text>
+        <text class="t-body" x="52" y="110">one per room</text>
+
+        <rect class="box" x="38" y="140" width="206" height="90" rx="8"/>
+        <text class="t-title" x="52" y="162">Compute unit, in the room</text>
+        <text class="t-body" x="52" y="180">3D reconstruction, 10x a second</text>
+        <text class="t-body" x="52" y="196">Who is in the room, what they do</text>
+        <text class="t-mono" x="52" y="216">images deleted, none stored</text>
+
+        <rect class="box" x="38" y="252" width="206" height="54" rx="8"/>
+        <text class="t-title" x="52" y="274">E-Call</text>
+        <text class="t-body" x="52" y="292">The resident asks, by hand</text>
+
+        <!-- Smith -->
+        <rect class="box" x="38" y="372" width="206" height="48" rx="8"/>
+        <text class="t-title" x="52" y="392">Smith</text>
+        <text class="t-body" x="52" y="409">Fleet management, open source</text>
+        <path class="arrow-dot" d="M141,372 L141,232" marker-end="url(#ah)" color="var(--ink-3)"/>
+        <text class="t-mono" x="150" y="300">updates,</text>
+        <text class="t-mono" x="150" y="314">device health</text>
+
+        <!-- sensor to compute -->
+        <path class="arrow" d="M141,118 L141,138" marker-end="url(#ah)" color="var(--line)"/>
+
+        <!-- compute to platform: the data contract -->
+        <path class="arrow" d="M244,172 L388,150" marker-end="url(#ah)" color="var(--line)"/>
+        <text class="t-edge" x="262" y="118">what leaves the room</text>
+        <text class="t-mono" x="262" y="136">fall alarm + confidence</text>
+        <text class="t-mono" x="262" y="152">bed exit, stillness</text>
+        <text class="t-mono" x="262" y="168">respiration when still</text>
+        <text class="t-mono" x="262" y="184">pseudonymised clip</text>
+        <text class="t-mono" x="262" y="200">who is in the room</text>
+
+        <!-- ecall to platform -->
+        <path class="arrow" d="M244,279 L388,258" marker-end="url(#ah)" color="var(--line)"/>
+        <text class="t-mono" x="266" y="276">button pressed</text>
+
+        <!-- PLATFORM -->
+        <rect class="box" x="404" y="62" width="200" height="86" rx="8"/>
+        <text class="t-title" x="418" y="84">Risk and ranking</text>
+        <text class="t-body" x="418" y="102">Fall risk per resident,</text>
+        <text class="t-body" x="418" y="118">21 signals, recalculated daily</text>
+        <text class="t-body" x="418" y="136">Alert tuning per resident</text>
+
+        <rect class="box-dash" x="404" y="172" width="200" height="74" rx="8"/>
+        <text class="t-title" x="418" y="194">Attendance state</text>
+        <text class="t-body" x="418" y="212">Which rooms are covered,</text>
+        <text class="t-body" x="418" y="228">shared across every surface</text>
+        <text class="t-prop" x="418" y="264">proposed</text>
+
+        <rect class="box" x="404" y="286" width="200" height="40" rx="8"/>
+        <text class="t-title" x="418" y="311">One facility coordinate frame</text>
+
+        <!-- platform to surfaces -->
+        <path class="arrow" d="M604,100 L732,96" marker-end="url(#ah)" color="var(--line)"/>
+        <text class="t-edge" x="620" y="86">ranked alert</text>
+
+        <path class="arrow" d="M604,300 L700,300 L700,230 L732,230" marker-end="url(#ah)" color="var(--line)"/>
+        <text class="t-edge" x="616" y="318">same state, every screen</text>
+
+        <!-- SURFACES -->
+        <rect class="box" x="748" y="56" width="216" height="84" rx="8"/>
+        <text class="t-title" x="762" y="78">Nurse phone</text>
+        <text class="t-body" x="762" y="96">Go now: room 05, possible fall</text>
+        <text class="t-body" x="762" y="112">The screen in this repo</text>
+        <text class="t-mono" x="762" y="130">one of two staff on the floor</text>
+
+        <rect class="box" x="748" y="166" width="216" height="62" rx="8"/>
+        <text class="t-title" x="762" y="188">Colleague phone</text>
+        <text class="t-body" x="762" y="206">Jonas, east corridor</text>
+        <text class="t-body" x="762" y="221">Sees room 05 as covered</text>
+
+        <rect class="box" x="748" y="252" width="216" height="54" rx="8"/>
+        <text class="t-title" x="762" y="274">Wall screen</text>
+        <text class="t-body" x="762" y="292">The floor at a glance</text>
+
+        <rect class="box" x="748" y="330" width="216" height="70" rx="8"/>
+        <text class="t-title" x="762" y="352">Desktop and Samwise</text>
+        <text class="t-body" x="762" y="370">Response times, patterns,</text>
+        <text class="t-body" x="762" y="386">"why did this fire"</text>
+
+        <!-- staff assist, proposed -->
+        <path class="arrow-dash" d="M856,140 L856,164" marker-end="url(#ah)" color="var(--proposed)"/>
+        <text class="t-prop" x="866" y="157">staff assist, proposed</text>
+
+        <!-- THE RETURN LOOP -->
+        <path class="arrow-acc" d="M856,400 L856,470 L141,470 L141,54" marker-end="url(#ah)" color="var(--accent)"/>
+        <text class="t-acc" x="396" y="462">she walks to room 05, nothing tapped</text>
+
+        <!-- attended path back out -->
+        <path class="arrow-acc" d="M604,210 L676,210 L676,540 L856,540 L856,406" marker-end="url(#ah)" color="var(--accent)"/>
+        <text class="t-acc" x="690" y="556">room marked attended on every screen</text>
+
+        <!-- step pins -->
+        <circle class="pin" cx="141" cy="128" r="11"/><text class="pin-t" x="141" y="132" text-anchor="middle">1</text>
+        <circle class="pin" cx="668" cy="96" r="11"/><text class="pin-t" x="668" y="100" text-anchor="middle">2</text>
+        <circle class="pin" cx="498" cy="470" r="11"/><text class="pin-t" x="498" y="474" text-anchor="middle">3</text>
+        <circle class="pin" cx="141" cy="252" r="11"/><text class="pin-t" x="141" y="256" text-anchor="middle">4</text>
+        <circle class="pin" cx="676" cy="380" r="11"/><text class="pin-t" x="676" y="384" text-anchor="middle">5</text>
+
+        <!-- step legend -->
+        <text class="t-mono" x="30" y="600">1  03:10  movement matches a fall, 94% confidence</text>
+        <text class="t-mono" x="30" y="618">2  03:10  ranked above everything else, sent to the phone</text>
+        <text class="t-mono" x="30" y="636">3  03:11  she reads room, reason, person and walks</text>
+        <text class="t-mono" x="520" y="618">4  03:13  the same sensor sees a second person enter</text>
+        <text class="t-mono" x="520" y="636">5  03:13  attended, not resolved, on every surface</text>
+      </svg>
+    </div>
+    <figcaption>
+      Five steps, one loop. Steps 1 and 2 are the path every monitoring product has. Steps 3, 4 and 5 are the
+      one this hardware makes possible: the output of the system walks back into its own input.
+    </figcaption>
+  </figure>
+
+  <div class="key">
+    <span><i class="swatch"></i> published by Teton</span>
+    <span><i class="swatch prop"></i> proposed, not published</span>
+    <span><i class="swatch acc"></i> the arrival loop</span>
+  </div>
+
+  <h2>What each piece contributes to this one scenario</h2>
+
+  <table>
+    <thead>
+      <tr><th>Piece</th><th>Gives this screen</th><th>Takes from this screen</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Ceiling sensor and compute unit</td>
+        <td>Fall alarm with a confidence value, bed exit, stillness, respiration while still, a pseudonymised clip, and who is in the room</td>
+        <td>Nothing. It is the one part that never needs telling</td>
+      </tr>
+      <tr>
+        <td>E-Call</td>
+        <td>A resident asking for a person, which is a different kind of event from one the building noticed</td>
+        <td>Nothing</td>
+      </tr>
+      <tr>
+        <td>Cloud platform</td>
+        <td>Fall risk per resident recalculated daily from 21 signals, which is what makes one bed exit urgent and another routine</td>
+        <td>Attendance, so the state is shared rather than personal <span class="prop-tag">proposed</span></td>
+      </tr>
+      <tr>
+        <td>Facility coordinate frame</td>
+        <td>Where a colleague is, so the screen can say Jonas is in room 07</td>
+        <td>Nothing</td>
+      </tr>
+      <tr>
+        <td>Colleague phone</td>
+        <td>Confirmation that help is coming</td>
+        <td>A staff assist call <span class="prop-tag">proposed</span></td>
+      </tr>
+      <tr>
+        <td>Wall screen</td>
+        <td>Nothing to the phone</td>
+        <td>Which rooms are covered, so two people do not walk to the same one</td>
+      </tr>
+      <tr>
+        <td>Desktop and Samwise</td>
+        <td>Nothing during the night</td>
+        <td>Honest response times, measured from alert to arrival rather than from alert to whenever a button was pressed</td>
+      </tr>
+      <tr>
+        <td>Smith</td>
+        <td>Device health, which is how three silent rooms get told apart from three dead sensors</td>
+        <td>Nothing</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>The two assumptions this drawing makes</h2>
+
+  <table>
+    <tbody>
+      <tr>
+        <td>Named staff</td>
+        <td>The sensor detects a person, not a named person. Identity most likely comes from which phone is signed in on shift, matched to the room the sensors see occupied. Where identity is unknown the screen should still say "a colleague is in room 07", which is the fact that matters.</td>
+      </tr>
+      <tr>
+        <td>Attended, not resolved</td>
+        <td>A person entering the room means somebody is there. It does not mean the resident is fine, and the person could be a relative. Presence marks an alert attended. Closing it still needs a human.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <footer>
+    Drawn from Teton's public material: <a href="https://www.teton.ai/blog/how-teton-sees-the-room">How Teton Sees the Room</a>,
+    <a href="https://www.teton.ai/blog/common-areas-how-teton-protects-the-whole-community">Common Areas</a>,
+    <a href="https://www.teton.ai/blog/introducing-optimized-alerts">Introducing Optimized Alerts</a>,
+    <a href="https://www.teton.ai/blog/samwise-blog">Samwise</a> and
+    <a href="https://github.com/teton-ai/smith">teton-ai/smith</a>.
+    Synthetic scenario, no Teton data.
+  </footer>
+</div>

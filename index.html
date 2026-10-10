@@ -1,0 +1,1590 @@
+<title>Night Shift Triage</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+  /* Layout: one column, phone first, ordered by what the nurse does next.
+     Go now, then the next round, then handover. Numbers live at the bottom.
+     Go now sorts by severity rank, then by recency: a fall outranks a
+     colleague's call for help, which outranks a resident call button.
+     Committed single dark look: read on a dimmed phone at 3am. */
+  :root {
+    color-scheme: dark;
+
+    --bg: #0e1116;
+    --surface: #161b22;
+    --surface-2: #1d242e;
+    --line: #2a323d;
+
+    --ink: #e6edf3;
+    --ink-2: #9aa7b4;
+    --ink-3: #7d8996;
+
+    --accent: #5eb0ef;
+    --accent-dim: #2f6c9c;
+
+    --now: #f87171;
+    --staff: #c084fc;
+    --round: #fbbf24;
+    --quiet: #64748b;
+
+    --sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+    --scale: 1;
+  }
+
+  :root[data-size="large"] { --scale: 1.25; }
+
+  * { box-sizing: border-box; }
+
+  html, body { background: var(--bg); }
+
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    color: var(--ink);
+    font-size: calc(15px * var(--scale));
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-block: 0 48px;
+  }
+
+  /* ---------- header ---------- */
+
+  header {
+    position: sticky;
+    top: env(safe-area-inset-top, 0px);
+    z-index: 20;
+    background: color-mix(in srgb, var(--bg) 94%, transparent);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+    margin-left: -16px;
+    margin-right: -16px;
+    padding: 10px 16px;
+  }
+
+  .head-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .head-id { min-width: 0; }
+
+  h1 {
+    margin: 0;
+    font-size: calc(15px * var(--scale));
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .clock {
+    font-family: var(--mono);
+    font-size: calc(12px * var(--scale));
+    color: var(--ink-2);
+    font-variant-numeric: tabular-nums;
+  }
+
+  button.panic {
+    appearance: none;
+    flex: 0 0 auto;
+    background: color-mix(in srgb, var(--now) 14%, transparent);
+    border: 1.5px solid var(--now);
+    color: var(--now);
+    font-family: var(--sans);
+    font-size: calc(13px * var(--scale));
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    border-radius: 7px;
+    padding: 10px 14px;
+    min-height: 46px;
+    cursor: pointer;
+  }
+
+  button.panic:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  .panic-done {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: calc(12px * var(--scale));
+    color: var(--ink);
+    text-align: right;
+  }
+
+  .panic-done b { color: var(--now); font-weight: 600; display: block; }
+
+  button.undo {
+    appearance: none;
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    color: var(--ink-2);
+    font-family: var(--sans);
+    font-size: calc(12px * var(--scale));
+    padding: 8px 10px;
+    min-height: 38px;
+    cursor: pointer;
+  }
+
+  button.undo-head {
+    border: 1.5px solid var(--ink-3);
+    border-radius: 7px;
+    color: var(--ink);
+    font-size: calc(13px * var(--scale));
+    font-weight: 600;
+    padding: 11px 18px;
+    min-height: 46px;
+  }
+
+  button.undo:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* colleague strip: scrolls away, unlike the button above it */
+
+  .mate {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-top: 12px;
+    font-size: calc(12px * var(--scale));
+    color: var(--ink-2);
+    flex-wrap: wrap;
+  }
+
+  .mate .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--staff);
+    flex: 0 0 auto;
+  }
+
+  .mate b { color: var(--ink); font-weight: 500; }
+  .mate .where { font-family: var(--mono); color: var(--ink); }
+
+  /* confirmation block after Alert Jonas */
+
+  .panic-banner {
+    margin: 16px 0 0;
+    background: color-mix(in srgb, var(--staff) 13%, var(--surface));
+    border: 1px solid color-mix(in srgb, var(--staff) 45%, transparent);
+    border-left: 4px solid var(--staff);
+    border-radius: 7px;
+    padding: 16px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .pb-text { flex: 1 1 200px; min-width: 0; }
+
+  .pb-title {
+    margin: 0;
+    font-size: calc(21px * var(--scale));
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+  }
+
+  .pb-sub { margin: 5px 0 0; font-size: calc(14px * var(--scale)); color: var(--ink-2); }
+
+  .panic-chip {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    font-size: calc(12px * var(--scale));
+    font-weight: 600;
+    color: var(--staff);
+    border: 1.5px solid color-mix(in srgb, var(--staff) 55%, transparent);
+    background: color-mix(in srgb, var(--staff) 12%, transparent);
+    border-radius: 7px;
+    padding: 10px 14px;
+    min-height: 46px;
+  }
+
+  /* ---------- section bands ---------- */
+
+  .band {
+    display: flex;
+    align-items: baseline;
+    gap: 9px;
+    margin: 26px 0 9px;
+    flex-wrap: wrap;
+  }
+
+  .band h2 {
+    margin: 0;
+    font-size: calc(13px * var(--scale));
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .band[data-tier="now"] h2 { color: var(--now); }
+  .band[data-tier="round"] h2 { color: var(--round); }
+  .band[data-tier="later"] h2 { color: var(--ink-2); }
+
+  .band .count {
+    font-family: var(--mono);
+    font-size: calc(12px * var(--scale));
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- go now cards ---------- */
+
+  ul.stack { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--now);
+    border-radius: 7px;
+    padding: 14px;
+  }
+
+  .card[data-who="staff"] { border-left-color: var(--staff); }
+
+  .card-top {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    justify-content: space-between;
+  }
+
+  .room {
+    font-family: var(--mono);
+    font-size: calc(30px * var(--scale));
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+
+  .room small {
+    display: block;
+    font-family: var(--sans);
+    font-size: calc(11px * var(--scale));
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: 4px;
+  }
+
+  .ago {
+    font-family: var(--mono);
+    font-size: calc(14px * var(--scale));
+    color: var(--now);
+    font-variant-numeric: tabular-nums;
+    flex: 0 0 auto;
+    text-align: right;
+    font-weight: 500;
+  }
+
+  .card[data-who="staff"] .ago { color: var(--staff); }
+
+  .ago small {
+    display: block;
+    font-family: var(--sans);
+    font-size: calc(10px * var(--scale));
+    color: var(--ink-3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 400;
+  }
+
+  /* after the room, the reason is the next thing read */
+  .reason {
+    margin: 12px 0 0;
+    font-size: calc(19px * var(--scale));
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+
+  .who {
+    margin: 7px 0 0;
+    font-size: calc(14px * var(--scale));
+    color: var(--ink-2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .who .name { color: var(--ink); font-weight: 500; overflow-wrap: anywhere; }
+
+  .pill {
+    font-size: calc(10px * var(--scale));
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border-radius: 4px;
+    padding: 3px 6px;
+    background: var(--round);
+    color: var(--bg);
+    flex: 0 0 auto;
+  }
+
+  .do {
+    margin: 12px 0 0;
+    padding-top: 11px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .do-text { font-size: calc(14px * var(--scale)); font-weight: 500; flex: 1 1 150px; }
+
+  button.act {
+    appearance: none;
+    border: 0;
+    border-radius: 6px;
+    background: var(--ink);
+    color: var(--bg);
+    font-family: var(--sans);
+    font-size: calc(14px * var(--scale));
+    font-weight: 600;
+    padding: 11px 16px;
+    min-height: 46px;
+    cursor: pointer;
+    flex: 0 0 auto;
+  }
+
+  button.act:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .escalate { margin: 10px 0 0; font-size: calc(12px * var(--scale)); color: var(--ink-2); }
+  .escalate .num { font-family: var(--mono); color: var(--ink); }
+
+  /* ---------- round list ---------- */
+
+  .round-intro { color: var(--ink-2); font-size: calc(13px * var(--scale)); margin: 0 0 10px; }
+
+  li.check {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--round);
+    border-radius: 6px;
+  }
+
+  li.check[data-risk="low"] { border-left-color: var(--quiet); }
+
+  li.check label {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 12px;
+    cursor: pointer;
+  }
+
+  li.check input {
+    appearance: none;
+    flex: 0 0 auto;
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--ink-3);
+    border-radius: 5px;
+    margin: 1px 0 0;
+    cursor: pointer;
+    position: relative;
+  }
+
+  li.check input:checked { border-color: var(--quiet); background: var(--quiet); }
+
+  li.check input:checked::after {
+    content: "";
+    position: absolute;
+    left: 6px;
+    top: 2px;
+    width: 7px;
+    height: 12px;
+    border: solid var(--bg);
+    border-width: 0 2.5px 2.5px 0;
+    transform: rotate(45deg);
+  }
+
+  li.check input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  li.check:has(input:checked) { opacity: 0.45; border-left-color: var(--quiet); }
+  li.check:has(input:checked) .c-who { text-decoration: line-through; }
+
+  /* person on the left in two lines, where-and-what on the right */
+  .c-person { flex: 1 1 auto; min-width: 0; }
+
+  .c-who {
+    font-size: calc(15px * var(--scale));
+    font-weight: 600;
+    overflow-wrap: anywhere;
+    display: block;
+  }
+
+  .status {
+    display: inline-block;
+    margin-top: 5px;
+    font-size: calc(11px * var(--scale));
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border-radius: 4px;
+    padding: 3px 7px;
+  }
+
+  .status[data-level="high"] {
+    color: var(--bg);
+    background: var(--round);
+  }
+
+  .status[data-level="watch"] {
+    color: var(--round);
+    background: color-mix(in srgb, var(--round) 16%, transparent);
+    border: 1px solid color-mix(in srgb, var(--round) 45%, transparent);
+  }
+
+  .status[data-level="routine"] {
+    color: var(--ink-2);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+  }
+
+  .c-event {
+    flex: 0 0 auto;
+    text-align: right;
+    max-width: 46%;
+  }
+
+  .c-room {
+    font-family: var(--mono);
+    font-size: calc(15px * var(--scale));
+    font-weight: 500;
+    display: block;
+    overflow-wrap: anywhere;
+  }
+
+  .c-what {
+    font-size: calc(12px * var(--scale));
+    color: var(--ink-2);
+    display: block;
+    margin-top: 3px;
+  }
+
+  .c-what time { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+  /* ---------- later ---------- */
+
+  .quiet-row {
+    background: color-mix(in srgb, var(--surface) 55%, transparent);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 12px;
+    font-size: calc(13px * var(--scale));
+    color: var(--ink-2);
+  }
+
+  .quiet-row b { color: var(--ink); font-weight: 500; }
+
+  details.fold {
+    background: color-mix(in srgb, var(--surface) 55%, transparent);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+  }
+
+  details.fold > summary {
+    padding: 12px;
+    cursor: pointer;
+    font-size: calc(13px * var(--scale));
+    color: var(--ink-2);
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: baseline;
+  }
+
+  details.fold > summary::-webkit-details-marker { display: none; }
+  details.fold > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 6px; }
+  details.fold > summary b { color: var(--ink); font-weight: 500; }
+  details.fold > summary .chev { font-family: var(--mono); color: var(--ink-3); flex: 0 0 auto; }
+
+  .fold-body { border-top: 1px solid var(--line); padding: 10px 12px 14px; }
+
+  .mention {
+    display: flex;
+    gap: 10px;
+    padding: 7px 0;
+    font-size: calc(13px * var(--scale));
+    border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+    align-items: baseline;
+  }
+
+  .mention:last-child { border-bottom: 0; }
+  .mention .m-room { font-family: var(--mono); color: var(--ink-2); flex: 0 0 3.4em; }
+  .mention .m-text { color: var(--ink-2); min-width: 0; }
+  .mention .m-text b { color: var(--ink); font-weight: 500; }
+
+  .log { display: grid; gap: 3px; max-height: 320px; overflow-y: auto; }
+
+  .log-row {
+    display: flex;
+    gap: 10px;
+    font-size: calc(12px * var(--scale));
+    color: var(--ink-2);
+    align-items: baseline;
+    padding: 3px 0;
+  }
+
+  .log-row time { font-family: var(--mono); color: var(--ink); font-variant-numeric: tabular-nums; flex: 0 0 auto; }
+  .log-row .l-room { font-family: var(--mono); color: var(--ink-3); flex: 0 0 3.4em; }
+
+  /* ---------- shift review ---------- */
+
+  .review-note { color: var(--ink-3); font-size: calc(12px * var(--scale)); margin: 0 0 12px; }
+
+  .bars { display: flex; align-items: flex-end; gap: 2px; height: 84px; }
+
+  .bar-cell {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+
+  .bar { width: 100%; background: var(--accent-dim); border-radius: 4px 4px 0 0; min-height: 2px; }
+  .bar-cell[data-peak="true"] .bar { background: var(--accent); }
+
+  .bar-count {
+    font-family: var(--mono);
+    font-size: calc(10px * var(--scale));
+    text-align: center;
+    padding-bottom: 3px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .hours {
+    display: flex;
+    gap: 2px;
+    margin-top: 6px;
+    border-top: 1px solid var(--line);
+    padding-top: 5px;
+  }
+
+  .hour-label {
+    flex: 1 1 0;
+    min-width: 0;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: calc(9px * var(--scale));
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .after { margin-top: 12px; font-size: calc(12px * var(--scale)); color: var(--ink-2); font-variant-numeric: tabular-nums; }
+
+  /* ---------- all clear ---------- */
+
+  .allclear {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--quiet);
+    border-radius: 7px;
+    padding: 18px 14px;
+  }
+
+  .allclear p { margin: 0; }
+  .allclear .ac-title { font-size: calc(15px * var(--scale)); font-weight: 500; }
+  .allclear .ac-body { color: var(--ink-2); font-size: calc(13px * var(--scale)); margin-top: 4px; }
+
+  /* ---------- tools / footer ---------- */
+
+  .tools { display: flex; gap: 8px; flex-wrap: wrap; margin: 28px 0 0; }
+
+  .toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface);
+    padding: 9px 12px;
+    font-size: calc(12px * var(--scale));
+    color: var(--ink-2);
+    cursor: pointer;
+    min-height: 40px;
+  }
+
+  .toggle input { accent-color: var(--accent); margin: 0; }
+  .toggle:has(input:checked) { color: var(--ink); }
+  .toggle:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  button.reset {
+    appearance: none;
+    border: 1px dashed var(--ink-3);
+    border-radius: 6px;
+    background: none;
+    color: var(--ink-2);
+    font-family: var(--mono);
+    font-size: calc(12px * var(--scale));
+    padding: 9px 14px;
+    min-height: 40px;
+    cursor: pointer;
+  }
+
+  button.reset:hover { color: var(--ink); border-color: var(--ink-2); }
+  button.reset:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* segmented control */
+
+  .group {
+    display: flex;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--surface);
+  }
+
+  .group button {
+    appearance: none;
+    background: none;
+    border: 0;
+    color: var(--ink-2);
+    font-family: var(--sans);
+    font-size: calc(12px * var(--scale));
+    padding: 9px 12px;
+    min-height: 40px;
+    cursor: pointer;
+  }
+
+  .group button + button { border-left: 1px solid var(--line); }
+
+  .group button[aria-pressed="true"] {
+    background: var(--surface-2);
+    color: var(--ink);
+    box-shadow: inset 0 -2px 0 var(--accent);
+  }
+
+  .group button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+  /* ---------- concept A: one persistent escalation entry ---------- */
+
+  :root[data-concept="A"] .wrap { padding-bottom: 104px; }
+
+  .helpbar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    background: color-mix(in srgb, var(--bg) 93%, transparent);
+    backdrop-filter: blur(8px);
+    border-top: 1px solid var(--line);
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+    display: flex;
+    justify-content: center;
+  }
+
+  .helpbar button {
+    appearance: none;
+    width: 100%;
+    max-width: 608px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: calc(14px * var(--scale));
+    font-weight: 600;
+    padding: 13px;
+    min-height: 50px;
+    cursor: pointer;
+  }
+
+  .helpbar button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .sheet-back {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    background: rgb(0 0 0 / 0.62);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+
+  .sheet {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-bottom: 0;
+    border-radius: 12px 12px 0 0;
+    padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+    width: 100%;
+    max-width: 640px;
+  }
+
+  .sheet h3 { margin: 0; font-size: calc(18px * var(--scale)); font-weight: 600; }
+  .sheet-sub { margin: 4px 0 14px; color: var(--ink-2); font-size: calc(13px * var(--scale)); }
+
+  .ladder { display: grid; gap: 8px; }
+
+  .rung {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    padding: 12px;
+  }
+
+  button.rung {
+    appearance: none;
+    font-family: var(--sans);
+    text-align: left;
+    width: 100%;
+    color: inherit;
+    min-height: 62px;
+    cursor: pointer;
+  }
+
+  button.rung:active { background: var(--line); }
+  button.rung:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .calling { text-align: center; padding: 6px 0 2px; }
+  .calling .cl-who { font-size: calc(18px * var(--scale)); font-weight: 600; }
+  .calling .cl-sub { color: var(--ink-3); font-size: calc(12px * var(--scale)); margin-top: 3px; }
+
+  .calling .cl-num {
+    font-family: var(--mono);
+    font-size: calc(36px * var(--scale));
+    margin-top: 14px;
+    letter-spacing: 0.02em;
+    user-select: text;
+  }
+
+  .calling[data-level="emergency"] .cl-num { color: var(--now); }
+
+  .calling .cl-note {
+    color: var(--ink-2);
+    font-size: calc(13px * var(--scale));
+    margin-top: 16px;
+    max-width: 38ch;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .rung[data-level="emergency"] { border-color: color-mix(in srgb, var(--now) 55%, transparent); }
+  .rung .r-text { min-width: 0; }
+  .rung .r-who { display: block; font-weight: 500; font-size: calc(14px * var(--scale)); }
+  .rung .r-note { display: block; color: var(--ink-3); font-size: calc(12px * var(--scale)); margin-top: 3px; }
+  .rung .r-num { font-family: var(--mono); color: var(--ink); font-size: calc(17px * var(--scale)); flex: 0 0 auto; }
+  .rung[data-level="emergency"] .r-num { color: var(--now); }
+
+  /* after Jonas is alerted, the bar is the next step up, not a first step */
+  .helpbar button[data-urgent="true"] {
+    background: color-mix(in srgb, var(--round) 14%, transparent);
+    border: 1.5px solid var(--round);
+    color: var(--round);
+  }
+
+  .sheet-close {
+    appearance: none;
+    margin-top: 14px;
+    width: 100%;
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    color: var(--ink-2);
+    font-family: var(--sans);
+    font-size: calc(13px * var(--scale));
+    padding: 12px;
+    min-height: 46px;
+    cursor: pointer;
+  }
+
+  /* ---------- concept B: escalation inside the job you took ---------- */
+
+  .card[data-going="true"] { border-left-color: var(--quiet); }
+  .card[data-going="true"] .reason { color: var(--ink-2); }
+
+  .going {
+    margin: 12px 0 0;
+    padding-top: 11px;
+    border-top: 1px solid var(--line);
+  }
+
+  .going-note { font-size: calc(13px * var(--scale)); color: var(--ink-2); margin: 0 0 10px; }
+  .going-note b { color: var(--ink); font-weight: 500; }
+
+  .going-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  button.more {
+    appearance: none;
+    border: 1.5px solid var(--round);
+    background: color-mix(in srgb, var(--round) 12%, transparent);
+    border-radius: 6px;
+    color: var(--round);
+    font-family: var(--sans);
+    font-size: calc(13px * var(--scale));
+    font-weight: 600;
+    padding: 11px 14px;
+    min-height: 46px;
+    cursor: pointer;
+    flex: 1 1 auto;
+  }
+
+  button.done {
+    appearance: none;
+    border: 1px solid var(--line);
+    background: none;
+    border-radius: 6px;
+    color: var(--ink-2);
+    font-family: var(--sans);
+    font-size: calc(13px * var(--scale));
+    padding: 11px 14px;
+    min-height: 46px;
+    cursor: pointer;
+    flex: 0 0 auto;
+  }
+
+  button.more:focus-visible,
+  button.done:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .called {
+    margin: 10px 0 0;
+    background: color-mix(in srgb, var(--round) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--round) 40%, transparent);
+    border-radius: 6px;
+    padding: 12px;
+    font-size: calc(13px * var(--scale));
+  }
+
+  .called b { font-weight: 600; }
+  .called .c-sent { color: var(--ink-2); margin-top: 4px; display: block; }
+
+  /* presence observed by the room, with nobody tapping anything */
+
+  .presence {
+    margin: 12px 0 0;
+    padding-top: 11px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    gap: 9px;
+    align-items: baseline;
+    font-size: calc(13px * var(--scale));
+    color: var(--ink-2);
+  }
+
+  .presence .p-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--ink-3);
+    flex: 0 0 auto;
+    transform: translateY(-1px);
+  }
+
+  .card[data-present="true"] { border-left-color: var(--quiet); }
+  .card[data-present="true"] .reason { color: var(--ink-2); }
+  .card[data-present="true"] .presence { color: var(--ink); }
+  .card[data-present="true"] .p-dot { background: var(--staff); }
+  .presence b { color: var(--ink); font-weight: 500; }
+  .presence .p-seen { color: var(--ink-3); font-size: calc(11px * var(--scale)); display: block; margin-top: 2px; }
+
+  footer {
+    margin-top: 30px;
+    padding-top: 15px;
+    border-top: 1px solid var(--line);
+    color: var(--ink-3);
+    font-size: calc(12px * var(--scale));
+  }
+
+  footer p { margin: 0 0 8px; max-width: 64ch; }
+  footer b { color: var(--ink-2); font-weight: 500; }
+
+  .synthetic {
+    display: inline-block;
+    font-size: calc(10px * var(--scale));
+    font-family: var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-3);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 3px 7px;
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="head-row">
+      <div class="head-id">
+        <h1>Ground floor</h1>
+        <span class="clock">03:12 &middot; you and Jonas</span>
+      </div>
+      <div id="panic-slot"></div>
+    </div>
+  </header>
+
+  <div class="mate" id="mate"></div>
+  <div id="panic-banner"></div>
+
+  <div class="band" data-tier="now">
+    <h2>Go now</h2>
+    <span class="count" id="now-count"></span>
+  </div>
+  <ul class="stack" id="now-list"></ul>
+
+  <div class="band" data-tier="round">
+    <h2>On your 04:00 round</h2>
+    <span class="count" id="round-count"></span>
+  </div>
+  <p class="round-intro">Highest risk first, then in corridor order.</p>
+  <ul class="stack" id="round-list"></ul>
+
+  <div class="band" data-tier="later">
+    <h2>Later</h2>
+  </div>
+  <ul class="stack" id="later-list"></ul>
+
+  <div class="tools">
+    <div class="group" role="group" aria-label="Escalation concept">
+      <button type="button" data-concept="A" aria-pressed="true">Concept A</button>
+      <button type="button" data-concept="B" aria-pressed="false">Concept B</button>
+    </div>
+    <label class="toggle">
+      <input type="checkbox" id="opt-large">
+      Large text
+    </label>
+    <label class="toggle">
+      <input type="checkbox" id="opt-quiet-night">
+      Show a quiet night
+    </label>
+    <button class="reset" type="button" id="btn-walk">Simulate: you walk into the top room</button>
+    <button class="reset" type="button" id="btn-reset">Reset prototype</button>
+  </div>
+
+  <footer>
+    <p><span class="synthetic">Synthetic data &middot; not a real care home</span></p>
+    <p>
+      <b>What this assumes Teton already has:</b> per-room fall alerts and fall confidence,
+      bed-exit and stillness events, respiration while stationary, resident fall-risk scores
+      reassessed daily, and staff-visit counts per room.
+    </p>
+    <p>
+      <b>What it assumes they would need:</b> a named staff position, so the screen can say
+      Jonas is in room 07 rather than only that a colleague is somewhere on the floor, and a
+      staff-to-staff assist call.
+    </p>
+  </footer>
+</div>
+
+<div id="helpbar"></div>
+<div id="sheet"></div>
+
+<script>
+  const NOW = 432; // 03:12, minutes after 20:00
+
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  const rand = mulberry32(20260110);
+
+  const KINDS = {
+    fall:      { tier: "now", rank: 0, what: "Possible fall" },
+    assist:    { tier: "now", rank: 1, what: "Colleague needs help" },
+    call:      { tier: "now", rank: 2, what: "Call button" },
+    bedexit:   { tier: "round", what: "Out of bed" },
+    stillness: { tier: "round", what: "No movement" },
+    restless:  { tier: "handover", what: "Restless sleep" }
+  };
+
+  const RESIDENTS = [
+    { name: "Inger Dahl", room: "01", order: 1, risk: "low" },
+    { name: "Poul Vestergaard", room: "02", order: 2, risk: "low" },
+    { name: "Margrethe Sørensen-Lundqvist", room: "03", order: 3, risk: "high" },
+    { name: "Bent Nygaard", room: "04", order: 4, risk: "low" },
+    { name: "Karen Lindholm", room: "05", order: 5, risk: "high" },
+    { name: "Ebbe Thrane", room: "06", order: 6, risk: "low" },
+    { name: "Ruth Kjeldsen", room: "07", order: 7, risk: "high" },
+    { name: "Svend Aage Holm", room: "08", order: 8, risk: "low" },
+    { name: "Lis Winther", room: "09", order: 9, risk: "low" },
+    { name: "Aksel Brandt", room: "10", order: 10, risk: "low" },
+    { name: "Gudrun Mølgaard", room: "11", order: 11, risk: "high" },
+    { name: "Tove Rasmussen", room: "12", order: 12, risk: "low" },
+    { name: "Henning Due", room: "14B", order: 13, risk: "low" },
+    { name: "Esther Falk", room: "Ward 3, Bed B", order: 14, risk: "low" },
+    { name: "Villy Ponsaing", room: null, order: 15, risk: "low" },
+    { name: "Asta Bjerre", room: "17", order: 16, risk: "low" },
+    { name: "Mogens Juhl", room: "18", order: 17, risk: "low" },
+    { name: "Dagny Krogh", room: "19", order: 18, risk: "low" },
+    { name: "Ole Strandgaard", room: "20", order: 19, risk: "low" },
+    { name: "Birthe Lange", room: "21", order: 20, risk: "low" }
+  ];
+
+  const byName = (n) => RESIDENTS.find((r) => r.name === n);
+  const SILENT = new Set(["Dagny Krogh", "Ole Strandgaard", "Birthe Lange"]);
+  const HEAVY = "Margrethe Sørensen-Lundqvist";
+  const HOUR_WEIGHT = [0.5, 0.6, 0.8, 1.0, 1.2, 1.5, 1.8, 2.0, 1.7, 1.2, 0.9, 0.7];
+
+  function weightedHour() {
+    const total = HOUR_WEIGHT.reduce((a, b) => a + b, 0);
+    let r = rand() * total;
+    for (let h = 0; h < HOUR_WEIGHT.length; h++) {
+      r -= HOUR_WEIGHT[h];
+      if (r <= 0) return h;
+    }
+    return 11;
+  }
+
+  function buildNight() {
+    const kinds = ["fall", "call", "bedexit", "stillness", "restless"];
+    const weights = [0.03, 0.08, 0.23, 0.21, 0.45];
+    const events = [];
+    let id = 100;
+
+    const pickKind = () => {
+      let r = rand();
+      for (let i = 0; i < kinds.length; i++) {
+        r -= weights[i];
+        if (r <= 0) return kinds[i];
+      }
+      return "restless";
+    };
+
+    for (const res of RESIDENTS) {
+      if (SILENT.has(res.name) || res.name === HEAVY) continue;
+      const n = 6 + Math.floor(rand() * 9);
+      for (let i = 0; i < n; i++) {
+        events.push({
+          id: id++,
+          minute: weightedHour() * 60 + Math.floor(rand() * 60),
+          res,
+          kind: pickKind(),
+          confidence: 0.7 + rand() * 0.29,
+          stillFor: 20 + Math.floor(rand() * 90),
+          dropped: false
+        });
+      }
+    }
+
+    for (let i = 0; i < 40; i++) {
+      events.push({
+        id: id++,
+        minute: 360 + Math.floor(rand() * 180),
+        res: byName(HEAVY),
+        kind: rand() < 0.8 ? "restless" : "bedexit",
+        confidence: 0.8,
+        stillFor: 20,
+        dropped: false
+      });
+    }
+
+    events.sort((a, b) => a.minute - b.minute);
+    if (events[14]) events[14].dropped = true;
+    if (events[60]) events[60].dropped = true;
+    return events;
+  }
+
+  const ALL = buildNight();
+
+  // Three deliberate Go-now events, to test the ranking:
+  // a fall that just happened, a colleague's assist call, a resident's call button.
+  const LIVE = [
+    {
+      id: 1, minute: NOW - 2, kind: "fall", res: byName("Karen Lindholm"),
+      confidence: 0.94, stillFor: 2, dropped: false
+    },
+    {
+      id: 2, minute: NOW - 4, kind: "assist", staff: "Jonas",
+      res: byName("Ruth Kjeldsen"), confidence: 1, stillFor: 0, dropped: false
+    },
+    {
+      id: 3, minute: NOW - 9, kind: "call", res: byName("Gudrun Mølgaard"),
+      confidence: 1, stillFor: 0, dropped: false
+    }
+  ];
+
+  const SO_FAR = ALL.filter((e) => e.minute <= NOW).concat(LIVE).sort((a, b) => a.minute - b.minute);
+
+  let handledEarlier = 0;
+  for (const e of SO_FAR) {
+    if (KINDS[e.kind].tier === "now" && NOW - e.minute > 40) {
+      e.handled = true;
+      handledEarlier++;
+    }
+  }
+
+  const fmt = (m) => {
+    const h = (20 + Math.floor(m / 60)) % 24;
+    return String(h).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
+  };
+
+  const roomShort = (res) => res.room === null ? "—" : res.room;
+  const roomLong = (res) => res.room === null ? "the room, not recorded in the system" : "room " + res.room;
+
+  const state = {
+    acknowledged: new Set(),   // "I am going" tapped
+    present: new Set(),        // the room saw a second person walk in
+    done: new Set(),           // concept B only: job finished, card leaves
+    helpAsked: new Set(),      // concept B only: coordinator called from the card
+    quietNight: false,
+    jonasAlerted: null,
+    sheetOpen: false,
+    calling: null,
+    concept: "A"
+  };
+
+  // ---------- Alert Jonas ----------
+
+  function renderPanic() {
+    const slot = document.getElementById("panic-slot");
+    const banner = document.getElementById("panic-banner");
+
+    if (state.jonasAlerted === null) {
+      banner.innerHTML = "";
+      slot.innerHTML = '<button class="panic" type="button" id="panic-btn">Alert Jonas</button>';
+      document.getElementById("panic-btn").addEventListener("click", () => {
+        state.jonasAlerted = "03:12";
+        renderPanic();
+      });
+      return;
+    }
+
+    // the button becomes Undo and stays Undo, so a mistaken tap is always reversible
+    slot.innerHTML = '<button class="undo undo-head" type="button" id="undo-btn">Undo</button>';
+
+    banner.innerHTML = '<div class="panic-banner"><div class="pb-text">' +
+      '<p class="pb-title">Jonas alerted</p>' +
+      '<p class="pb-sub">Sent ' + state.jonasAlerted + ". He is coming to you.</p></div></div>";
+
+    document.getElementById("undo-btn").addEventListener("click", () => {
+      state.jonasAlerted = null;
+      renderPanic();
+    });
+  }
+
+  // ---------- colleague strip ----------
+
+  function renderMate() {
+    const mate = document.getElementById("mate");
+    const assist = SO_FAR.find((e) => e.kind === "assist" && !state.acknowledged.has(e.id));
+
+    if (state.quietNight) {
+      mate.innerHTML = '<span class="dot"></span><span><b>Jonas</b> in <span class="where">room 18</span>, ' +
+        "routine check, 2 min</span>";
+      return;
+    }
+
+    mate.innerHTML = '<span class="dot"></span><span><b>Jonas</b> in <span class="where">room ' +
+      (assist ? "07" : "18") + "</span>, " +
+      (assist ? "asked for help " + (NOW - assist.minute) + " min ago" : "routine check, 2 min") +
+      "</span>";
+  }
+
+  // ---------- what to do ----------
+
+  function instruction(e) {
+    if (e.kind === "fall") return "Go to " + roomLong(e.res) + ". Do not wait for a second alert.";
+    if (e.kind === "assist") return "Go to " + roomLong(e.res) + " and take over or assist.";
+    return "Go to " + roomLong(e.res) + " and ask what she needs.";
+  }
+
+  // ---------- go now ----------
+
+  function renderNow() {
+    const list = document.getElementById("now-list");
+    const countEl = document.getElementById("now-count");
+
+    const open = SO_FAR.filter((e) => KINDS[e.kind].tier === "now" && !e.handled);
+
+    // A card the room has seen somebody enter stays on screen as covered, in both
+    // concepts. Only an untouched, unentered room counts as still waiting.
+    const items = state.quietNight ? [] : (state.concept === "B"
+      ? open.filter((e) => !state.done.has(e.id))
+      : open.filter((e) => !state.acknowledged.has(e.id) || state.present.has(e.id))
+    ).sort((a, b) =>
+      Number(state.present.has(a.id)) - Number(state.present.has(b.id)) ||
+      Number(state.acknowledged.has(a.id)) - Number(state.acknowledged.has(b.id)) ||
+      KINDS[a.kind].rank - KINDS[b.kind].rank ||
+      b.minute - a.minute);
+
+    const waiting = items.filter((e) =>
+      !state.acknowledged.has(e.id) && !state.present.has(e.id)).length;
+    countEl.textContent = waiting ? waiting + (waiting === 1 ? " room" : " rooms") : "";
+
+    if (!items.length) {
+      list.innerHTML =
+        '<li class="allclear"><p class="ac-title">Nothing needs you right now.</p>' +
+        '<p class="ac-body">All residents checked. The next scheduled round is 04:00.</p></li>';
+      return;
+    }
+
+    list.innerHTML = items.map((e) => {
+      const mins = NOW - e.minute;
+      const isStaff = e.kind === "assist";
+      const pill = (!isStaff && e.res.risk === "high")
+        ? '<span class="pill">High fall risk</span>' : "";
+      const nameLine = isStaff
+        ? '<span class="name">Jonas</span><span>with ' + e.res.name + "</span>"
+        : '<span class="name">' + e.res.name + "</span>" + pill;
+
+      const going = state.acknowledged.has(e.id);
+      const present = state.present.has(e.id);
+
+      // observed by the room, not confirmed by the nurse
+      const presenceLine = present
+        ? '<div class="presence"><span class="p-dot"></span><span>' +
+          "<b>You are in the room.</b> Seen at 03:13, nothing tapped." +
+          '<span class="p-seen">Jonas and the wall screen show ' + roomLong(e.res) +
+          " as covered.</span></span></div>"
+        : '<div class="presence"><span class="p-dot"></span><span>Nobody has entered this room yet.' +
+          (going ? '<span class="p-seen">Jonas can see you claimed it.</span>' : "") +
+          "</span></div>";
+
+      const bActions = state.helpAsked.has(e.id)
+        ? '<div class="called"><b>Mette called, 4412.</b>' +
+          '<span class="c-sent">She has ' + roomLong(e.res) + " and " + e.res.name +
+          ", so you do not have to explain.</span></div>"
+        : '<div class="going-row">' +
+          '<button class="more" type="button" data-more="' + e.id + '">Need more help here</button>' +
+          '<button class="done" type="button" data-done="' + e.id + '">Done</button></div>';
+
+      let tail;
+      if (present) {
+        tail = presenceLine + (state.concept === "B" ? '<div class="going">' + bActions + "</div>" : "");
+      } else if (going && state.concept === "B") {
+        tail = '<div class="going">' +
+          '<p class="going-note">You are on your way. <b>' + roomLong(e.res) + "</b>.</p>" +
+          bActions + "</div>" + presenceLine;
+      } else {
+        tail = '<div class="do"><span class="do-text">' + instruction(e) + "</span>" +
+          '<button class="act" type="button" data-ack="' + e.id + '">I am going</button></div>' +
+          presenceLine;
+      }
+
+      return '<li class="card" data-who="' + (isStaff ? "staff" : "resident") +
+        '" data-going="' + going + '" data-present="' + present + '">' +
+        '<div class="card-top">' +
+        '<div class="room"><small>' + (e.res.room === null ? "Room unknown" : "Room") + "</small>" +
+        roomShort(e.res) + "</div>" +
+        '<div class="ago"><small>' + (isStaff ? "called" : "alerted") + "</small>" + mins + " min ago</div>" +
+        "</div>" +
+        '<p class="reason">' + KINDS[e.kind].what + "</p>" +
+        '<p class="who">' + nameLine + "</p>" +
+        tail +
+        "</li>";
+    }).join("");
+
+    list.querySelectorAll("[data-ack]").forEach((b) => {
+      b.addEventListener("click", () => {
+        state.acknowledged.add(Number(b.dataset.ack));
+        render();
+      });
+    });
+
+    list.querySelectorAll("[data-more]").forEach((b) => {
+      b.addEventListener("click", () => {
+        state.helpAsked.add(Number(b.dataset.more));
+        render();
+      });
+    });
+
+    list.querySelectorAll("[data-done]").forEach((b) => {
+      b.addEventListener("click", () => {
+        state.done.add(Number(b.dataset.done));
+        render();
+      });
+    });
+  }
+
+  // ---------- concept A: the persistent escalation entry ----------
+
+  const LADDER = [
+    { who: "Jonas", note: "On the floor with you, east corridor", num: "4407", level: "floor" },
+    { who: "Mette, night coordinator", note: "Second opinion, extra hands, a decision above you", num: "4412", level: "coord" },
+    { who: "On-call nurse", note: "Clinical questions, medication, wound care", num: "4420", level: "clinical" },
+    { who: "Ambulance", note: "Head injury, chest pain, unconscious", num: "112", level: "emergency" }
+  ];
+
+  function renderHelp() {
+    const bar = document.getElementById("helpbar");
+    const sheet = document.getElementById("sheet");
+    document.documentElement.dataset.concept = state.concept;
+
+    if (state.concept !== "A") {
+      bar.innerHTML = "";
+      sheet.innerHTML = "";
+      return;
+    }
+
+    const beyondJonas = state.jonasAlerted !== null;
+
+    bar.innerHTML = '<div class="helpbar"><button type="button" id="help-btn" data-urgent="' +
+      beyondJonas + '">' + (beyondJonas ? "Need more help" : "Get more help") + "</button></div>";
+
+    document.getElementById("help-btn").addEventListener("click", () => {
+      state.sheetOpen = true;
+      renderHelp();
+    });
+
+    if (!state.sheetOpen) {
+      sheet.innerHTML = "";
+      return;
+    }
+
+    // Jonas drops off the ladder once he is already on his way
+    const rungs = LADDER.filter((r) => !(beyondJonas && r.level === "floor"));
+
+    const body = state.calling
+      ? '<div class="calling" data-level="' + state.calling.level + '">' +
+        '<p class="cl-who">Calling ' + state.calling.who + "</p>" +
+        '<p class="cl-sub">' + state.calling.note + "</p>" +
+        '<p class="cl-num">' + state.calling.num + "</p>" +
+        '<p class="cl-note">On a real phone this opens the dialler straight away. ' +
+        "A published prototype cannot place calls.</p></div>" +
+        '<button class="sheet-close" type="button" id="sheet-back-btn">Back</button>'
+      : '<div class="ladder">' +
+        rungs.map((r, i) =>
+          '<button class="rung" type="button" data-call="' + i + '" data-level="' + r.level + '">' +
+          '<span class="r-text"><span class="r-who">' + r.who + "</span>" +
+          '<span class="r-note">' + r.note + "</span></span>" +
+          '<span class="r-num">' + r.num + "</span></button>"
+        ).join("") +
+        "</div>" +
+        '<button class="sheet-close" type="button" id="sheet-close">Close</button>';
+
+    sheet.innerHTML = '<div class="sheet-back" id="sheet-back"><div class="sheet" role="dialog" aria-label="Get more help">' +
+      "<h3>" + (state.calling ? "Calling" : (beyondJonas ? "Need more help" : "Get more help")) + "</h3>" +
+      '<p class="sheet-sub">Ground floor, 03:12. ' +
+      (state.calling ? "Room and resident go with the call."
+        : (beyondJonas ? "Jonas is already on his way. Nearest first after him." : "Nearest first.")) +
+      "</p>" + body + "</div></div>";
+
+    const close = () => { state.sheetOpen = false; state.calling = null; renderHelp(); };
+
+    const closeBtn = document.getElementById("sheet-close");
+    if (closeBtn) closeBtn.addEventListener("click", close);
+
+    const backBtn = document.getElementById("sheet-back-btn");
+    if (backBtn) backBtn.addEventListener("click", () => { state.calling = null; renderHelp(); });
+
+    sheet.querySelectorAll("[data-call]").forEach((b) => {
+      b.addEventListener("click", () => {
+        state.calling = rungs[Number(b.dataset.call)];
+        renderHelp();
+      });
+    });
+
+    document.getElementById("sheet-back").addEventListener("click", (ev) => {
+      if (ev.target.id === "sheet-back") close();
+    });
+  }
+
+  // ---------- next round ----------
+
+  function statusFor(e) {
+    if (e.res.risk === "high") return { level: "high", label: "High fall risk" };
+    if (e.kind === "stillness") return { level: "watch", label: "Longer still than usual" };
+    return { level: "routine", label: "Settled check" };
+  }
+
+  // the right side reads as a state, not as an event that fired
+  function lastSeen(e) {
+    if (e.kind === "bedexit") return "Last out of bed <time>" + fmt(e.minute) + "</time>";
+    return "Still since <time>" + fmt(e.minute) + "</time>";
+  }
+
+  function priority(e) {
+    const risk = e.res.risk === "high" ? 0 : 1;
+    const kind = e.kind === "bedexit" ? 0 : 1;
+    return risk * 10 + kind;
+  }
+
+  function renderRound() {
+    const list = document.getElementById("round-list");
+    const countEl = document.getElementById("round-count");
+
+    if (state.quietNight) {
+      countEl.textContent = "";
+      list.innerHTML = '<li class="quiet-row">Nothing flagged. Normal checks only.</li>';
+      return;
+    }
+
+    const latest = new Map();
+    for (const e of SO_FAR) {
+      if (KINDS[e.kind].tier !== "round") continue;
+      if (e.minute < 240) continue;
+      if (!latest.has(e.res.name) || e.minute > latest.get(e.res.name).minute) latest.set(e.res.name, e);
+    }
+
+    // severity of the resident first, then walk the corridor in order
+    const items = [...latest.values()].sort((a, b) =>
+      priority(a) - priority(b) || a.res.order - b.res.order);
+
+    countEl.textContent = items.length + (items.length === 1 ? " room" : " rooms");
+
+    list.innerHTML = items.map((e) => {
+      const st = statusFor(e);
+      return '<li class="check" data-risk="' + e.res.risk + '"><label>' +
+        '<input type="checkbox" id="chk-' + e.id + '">' +
+        '<span class="c-person">' +
+        '<span class="c-who">' + e.res.name + "</span>" +
+        '<span class="status" data-level="' + st.level + '">' + st.label + "</span>" +
+        "</span>" +
+        '<span class="c-event">' +
+        '<span class="c-room">' + roomShort(e.res) + "</span>" +
+        '<span class="c-what">' + lastSeen(e) + "</span>" +
+        "</span>" +
+        "</label></li>";
+    }).join("");
+  }
+
+  // ---------- later ----------
+
+  function renderLater() {
+    const list = document.getElementById("later-list");
+
+    const mentions = new Map();
+    for (const e of SO_FAR) {
+      if (KINDS[e.kind].tier !== "handover") continue;
+      mentions.set(e.res.name, (mentions.get(e.res.name) || 0) + 1);
+    }
+
+    const mentionRows = [...mentions.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, n]) => {
+        const res = byName(name);
+        return '<div class="mention"><span class="m-room">' + roomShort(res) + "</span>" +
+          '<span class="m-text"><b>' + name + "</b> woke " + n + " times tonight" +
+          (n >= 20 ? ", far above her normal" : "") + ".</span></div>";
+      }).join("");
+
+    const silentNames = RESIDENTS.filter((r) => SILENT.has(r.name));
+
+    const logRows = SO_FAR.slice().reverse().map((e) =>
+      '<div class="log-row"><time>' + fmt(e.minute) + "</time>" +
+      '<span class="l-room">' + roomShort(e.res) + "</span>" +
+      "<span>" + KINDS[e.kind].what + (e.dropped ? ", reading dropped out" : "") + "</span></div>"
+    ).join("");
+
+    const counts = new Array(12).fill(0);
+    for (const e of ALL) counts[Math.floor(e.minute / 60)]++;
+    const max = Math.max(...counts, 1);
+    const peak = counts.indexOf(max);
+
+    const bars = counts.map((c, i) =>
+      '<div class="bar-cell" data-peak="' + (i === peak) + '">' +
+      (i === peak ? '<span class="bar-count">' + c + "</span>" : "") +
+      '<div class="bar" style="height:' + Math.round((c / max) * 100) + '%"></div></div>'
+    ).join("");
+
+    const hours = counts.map((c, i) =>
+      '<div class="hour-label">' + (i % 2 === 0 ? String((20 + i) % 24).padStart(2, "0") : "") + "</div>"
+    ).join("");
+
+    list.innerHTML =
+      '<li class="quiet-row"><b>' + handledEarlier + " alerts</b> earlier tonight were already attended, " +
+      "by you, Jonas, or Mette.</li>" +
+
+      '<li><details class="fold"><summary><span>Mention at handover &middot; <b>' + mentions.size +
+      " residents</b></span><span class=\"chev\">+</span></summary>" +
+      '<div class="fold-body">' + mentionRows + "</div></details></li>" +
+
+      '<li class="quiet-row"><b>' + silentNames.length + " residents</b> produced nothing all night: " +
+      silentNames.map((r) => r.name).join(", ") +
+      ". Either a settled night or a sensor worth checking in daylight.</li>" +
+
+      '<li><details class="fold"><summary><span>Shift review, for the morning meeting</span>' +
+      '<span class="chev">+</span></summary><div class="fold-body">' +
+      '<p class="review-note">Events per hour across the whole night, 20:00 to 08:00. ' +
+      "For the handover, not for the corridor.</p>" +
+      '<div class="bars">' + bars + "</div><div class=\"hours\">" + hours + "</div>" +
+      '<p class="after">' + ALL.length + " events across 20 residents, " +
+      (ALL.length / 20).toFixed(1) + " each. Busiest hour " +
+      String((20 + peak) % 24).padStart(2, "0") + ":00 with " + max + ".</p>" +
+      "</div></details></li>" +
+
+      '<li><details class="fold"><summary><span>Every event so far tonight &middot; <b>' +
+      SO_FAR.length + "</b></span><span class=\"chev\">+</span></summary>" +
+      '<div class="fold-body"><div class="log">' + logRows + "</div></div></details></li>";
+  }
+
+  function render() {
+    renderPanic();
+    renderMate();
+    renderNow();
+    renderRound();
+    renderLater();
+    renderHelp();
+  }
+
+  document.querySelectorAll("[data-concept]").forEach((b) => {
+    b.addEventListener("click", () => {
+      state.concept = b.dataset.concept;
+      state.sheetOpen = false;
+      state.calling = null;
+      document.querySelectorAll("[data-concept]").forEach((o) =>
+        o.setAttribute("aria-pressed", String(o === b)));
+      render();
+    });
+  });
+
+  document.getElementById("opt-large").addEventListener("change", (e) => {
+    document.documentElement.dataset.size = e.target.checked ? "large" : "normal";
+  });
+
+  document.getElementById("opt-quiet-night").addEventListener("change", (e) => {
+    state.quietNight = e.target.checked;
+    render();
+  });
+
+  // the room notices you arrive; no tap, no confirmation
+  document.getElementById("btn-walk").addEventListener("click", () => {
+    const next = SO_FAR
+      .filter((e) => KINDS[e.kind].tier === "now" && !e.handled && !state.present.has(e.id))
+      .sort((a, b) => KINDS[a.kind].rank - KINDS[b.kind].rank || b.minute - a.minute)[0];
+    if (next) state.present.add(next.id);
+    render();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  // back to 03:12 with nothing acknowledged, for the next person you show this to
+  document.getElementById("btn-reset").addEventListener("click", () => {
+    state.acknowledged.clear();
+    state.present.clear();
+    state.done.clear();
+    state.helpAsked.clear();
+    state.jonasAlerted = null;
+    state.quietNight = false;
+    state.sheetOpen = false;
+    state.calling = null;
+    document.getElementById("opt-quiet-night").checked = false;
+    document.getElementById("opt-large").checked = false;
+    document.documentElement.dataset.size = "normal";
+    render();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  render();
+</script>
