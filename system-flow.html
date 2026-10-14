@@ -99,7 +99,7 @@
     overflow-x: auto;
   }
 
-  svg.flow { display: block; width: 100%; min-width: 720px; height: auto; }
+  svg.flow { display: block; width: 100%; min-width: 780px; height: auto; }
 
   figcaption { margin-top: 12px; color: var(--ink-2); font-size: 13px; max-width: 76ch; }
 
@@ -112,6 +112,7 @@
   .t-title { fill: var(--ink); font: 600 13px var(--sans); }
   .t-body { fill: var(--ink-2); font: 400 11.5px var(--sans); }
   .t-mono { fill: var(--ink-2); font: 400 11px var(--mono); }
+  .t-mono-s { fill: var(--ink-2); font: 400 10px var(--mono); }
   .t-edge { fill: var(--ink-2); font: 400 11px var(--sans); }
   .t-prop { fill: var(--proposed); font: 500 11px var(--sans); }
   .t-acc { fill: var(--accent); font: 600 11.5px var(--sans); }
@@ -156,7 +157,7 @@
 
   <figure>
     <div class="figbox">
-      <svg class="flow" viewBox="0 0 1000 660" role="img"
+      <svg class="flow" viewBox="0 0 1060 640" role="img"
            aria-label="System flow: ceiling sensor and compute unit in room 05 send alarms to the cloud platform, which ranks an alert to the nurse's phone; the nurse walks to the room, the same sensor detects her arrival, and the platform marks the alert attended on every surface.">
 
         <defs>
@@ -166,124 +167,125 @@
         </defs>
 
         <!-- column headers -->
-        <text class="t-head" x="30" y="26">IN THE ROOM</text>
-        <text class="t-head" x="398" y="26">CLOUD PLATFORM</text>
-        <text class="t-head" x="742" y="26">WHAT PEOPLE SEE</text>
+        <text class="t-head" x="42" y="26">IN THE ROOM</text>
+        <text class="t-head" x="438" y="26">CLOUD PLATFORM</text>
+        <text class="t-head" x="788" y="26">WHAT PEOPLE SEE</text>
 
         <!-- zone outlines -->
-        <rect class="zone" x="22" y="38" width="238" height="300" rx="10"/>
-        <rect class="zone" x="390" y="38" width="230" height="300" rx="10"/>
-        <rect class="zone" x="734" y="38" width="244" height="380" rx="10"/>
+        <rect class="zone" x="34" y="38" width="232" height="300" rx="10"/>
+        <rect class="zone" x="430" y="38" width="230" height="300" rx="10"/>
+        <rect class="zone" x="780" y="38" width="250" height="380" rx="10"/>
 
         <!-- ROOM 05 -->
-        <rect class="box" x="38" y="56" width="206" height="62" rx="8"/>
-        <text class="t-title" x="52" y="78">Ceiling sensor</text>
-        <text class="t-body" x="52" y="96">Wide angle, infrared,</text>
-        <text class="t-body" x="52" y="110">one per room</text>
+        <rect class="box" x="52" y="56" width="206" height="62" rx="8"/>
+        <text class="t-title" x="66" y="78">Ceiling sensor</text>
+        <text class="t-body" x="66" y="96">Wide angle, infrared,</text>
+        <text class="t-body" x="66" y="110">one per room</text>
 
-        <rect class="box" x="38" y="140" width="206" height="90" rx="8"/>
-        <text class="t-title" x="52" y="162">Compute unit, in the room</text>
-        <text class="t-body" x="52" y="180">3D reconstruction, 10x a second</text>
-        <text class="t-body" x="52" y="196">Who is in the room, what they do</text>
-        <text class="t-mono" x="52" y="216">images deleted, none stored</text>
+        <rect class="box" x="52" y="140" width="206" height="90" rx="8"/>
+        <text class="t-title" x="66" y="162">Compute unit, in the room</text>
+        <text class="t-body" x="66" y="180">3D reconstruction, 10x a second</text>
+        <text class="t-body" x="66" y="196">Who is in the room, what they do</text>
+        <text class="t-mono" x="66" y="216">images deleted, none stored</text>
 
-        <rect class="box" x="38" y="252" width="206" height="54" rx="8"/>
-        <text class="t-title" x="52" y="274">E-Call</text>
-        <text class="t-body" x="52" y="292">The resident asks, by hand</text>
+        <rect class="box" x="52" y="252" width="206" height="54" rx="8"/>
+        <text class="t-title" x="66" y="274">E-Call</text>
+        <text class="t-body" x="66" y="292">The resident asks, by hand</text>
 
-        <!-- Smith -->
-        <rect class="box" x="38" y="372" width="206" height="48" rx="8"/>
-        <text class="t-title" x="52" y="392">Smith</text>
-        <text class="t-body" x="52" y="409">Fleet management, open source</text>
-        <path class="arrow-dot" d="M141,372 L141,232" marker-end="url(#ah)" color="var(--ink-3)"/>
-        <text class="t-mono" x="150" y="300">updates,</text>
-        <text class="t-mono" x="150" y="314">device health</text>
+        <!-- Smith, routed up the left lane so it clears the E-Call box -->
+        <rect class="box" x="52" y="372" width="206" height="48" rx="8"/>
+        <text class="t-title" x="66" y="392">Smith</text>
+        <text class="t-body" x="66" y="409">Fleet management, open source</text>
+        <path class="arrow-dot" d="M52,396 H42 V200 H50" marker-end="url(#ah)" color="var(--ink-3)"/>
+        <text class="t-mono" x="66" y="334">updates,</text>
+        <text class="t-mono" x="66" y="348">device health</text>
 
         <!-- sensor to compute -->
-        <path class="arrow" d="M141,118 L141,138" marker-end="url(#ah)" color="var(--line)"/>
+        <path class="arrow" d="M155,118 V138" marker-end="url(#ah)" color="var(--line)"/>
 
-        <!-- compute to platform: the data contract -->
-        <path class="arrow" d="M244,172 L388,150" marker-end="url(#ah)" color="var(--line)"/>
-        <text class="t-edge" x="262" y="118">what leaves the room</text>
-        <text class="t-mono" x="262" y="136">fall alarm + confidence</text>
-        <text class="t-mono" x="262" y="152">bed exit, stillness</text>
-        <text class="t-mono" x="262" y="168">respiration when still</text>
-        <text class="t-mono" x="262" y="184">pseudonymised clip</text>
-        <text class="t-mono" x="262" y="200">who is in the room</text>
+        <!-- compute to platform: routed over the data contract below it -->
+        <path class="arrow" d="M258,150 H274 V120 H436" marker-end="url(#ah)" color="var(--line)"/>
+        <text class="t-edge" x="282" y="162">what leaves the room</text>
+        <text class="t-mono-s" x="282" y="180">fall alarm + confidence</text>
+        <text class="t-mono-s" x="282" y="194">bed exit, stillness</text>
+        <text class="t-mono-s" x="282" y="208">respiration when still</text>
+        <text class="t-mono-s" x="282" y="222">pseudonymised clip</text>
+        <text class="t-mono-s" x="282" y="236">who is in the room</text>
 
         <!-- ecall to platform -->
-        <path class="arrow" d="M244,279 L388,258" marker-end="url(#ah)" color="var(--line)"/>
-        <text class="t-mono" x="266" y="276">button pressed</text>
+        <path class="arrow" d="M258,279 L424,264" marker-end="url(#ah)" color="var(--line)"/>
+        <text class="t-mono" x="290" y="296">button pressed</text>
 
         <!-- PLATFORM -->
-        <rect class="box" x="404" y="62" width="200" height="86" rx="8"/>
-        <text class="t-title" x="418" y="84">Risk and ranking</text>
-        <text class="t-body" x="418" y="102">Fall risk per resident,</text>
-        <text class="t-body" x="418" y="118">21 signals, recalculated daily</text>
-        <text class="t-body" x="418" y="136">Alert tuning per resident</text>
+        <rect class="box" x="444" y="62" width="202" height="86" rx="8"/>
+        <text class="t-title" x="458" y="84">Risk and ranking</text>
+        <text class="t-body" x="458" y="102">Fall risk per resident,</text>
+        <text class="t-body" x="458" y="118">21 signals, recalculated daily</text>
+        <text class="t-body" x="458" y="136">Alert tuning per resident</text>
 
-        <rect class="box-dash" x="404" y="172" width="200" height="74" rx="8"/>
-        <text class="t-title" x="418" y="194">Attendance state</text>
-        <text class="t-body" x="418" y="212">Which rooms are covered,</text>
-        <text class="t-body" x="418" y="228">shared across every surface</text>
-        <text class="t-prop" x="418" y="264">proposed</text>
+        <rect class="box-dash" x="444" y="172" width="202" height="74" rx="8"/>
+        <text class="t-title" x="458" y="194">Attendance state</text>
+        <text class="t-body" x="458" y="212">Which rooms are covered,</text>
+        <text class="t-body" x="458" y="228">shared across every surface</text>
+        <text class="t-prop" x="458" y="264">proposed</text>
 
-        <rect class="box" x="404" y="286" width="200" height="40" rx="8"/>
-        <text class="t-title" x="418" y="311">One facility coordinate frame</text>
+        <rect class="box" x="444" y="286" width="202" height="40" rx="8"/>
+        <text class="t-title" x="458" y="311">One facility coordinate frame</text>
 
         <!-- platform to surfaces -->
-        <path class="arrow" d="M604,100 L732,96" marker-end="url(#ah)" color="var(--line)"/>
-        <text class="t-edge" x="620" y="86">ranked alert</text>
+        <path class="arrow" d="M646,100 L772,96" marker-end="url(#ah)" color="var(--line)"/>
+        <text class="t-edge" x="664" y="86">ranked alert</text>
 
-        <path class="arrow" d="M604,300 L700,300 L700,230 L732,230" marker-end="url(#ah)" color="var(--line)"/>
-        <text class="t-edge" x="616" y="318">same state, every screen</text>
+        <path class="arrow" d="M646,306 H758 V200 H772" marker-end="url(#ah)" color="var(--line)"/>
+        <text class="t-edge" x="652" y="326">same state,</text>
+        <text class="t-edge" x="652" y="340">every screen</text>
 
         <!-- SURFACES -->
-        <rect class="box" x="748" y="56" width="216" height="84" rx="8"/>
-        <text class="t-title" x="762" y="78">Nurse phone</text>
-        <text class="t-body" x="762" y="96">Go now: room 05, possible fall</text>
-        <text class="t-body" x="762" y="112">The screen in this repo</text>
-        <text class="t-mono" x="762" y="130">one of two staff on the floor</text>
+        <rect class="box" x="794" y="56" width="222" height="84" rx="8"/>
+        <text class="t-title" x="808" y="78">Nurse phone</text>
+        <text class="t-body" x="808" y="96">Go now: room 05, possible fall</text>
+        <text class="t-body" x="808" y="112">The screen in this repo</text>
+        <text class="t-mono" x="808" y="130">one of two staff on the floor</text>
 
-        <rect class="box" x="748" y="166" width="216" height="62" rx="8"/>
-        <text class="t-title" x="762" y="188">Colleague phone</text>
-        <text class="t-body" x="762" y="206">Jonas, east corridor</text>
-        <text class="t-body" x="762" y="221">Sees room 05 as covered</text>
+        <rect class="box" x="794" y="166" width="222" height="62" rx="8"/>
+        <text class="t-title" x="808" y="188">Colleague phone</text>
+        <text class="t-body" x="808" y="206">Jonas, east corridor</text>
+        <text class="t-body" x="808" y="221">Sees room 05 as covered</text>
 
-        <rect class="box" x="748" y="252" width="216" height="54" rx="8"/>
-        <text class="t-title" x="762" y="274">Wall screen</text>
-        <text class="t-body" x="762" y="292">The floor at a glance</text>
+        <rect class="box" x="794" y="252" width="222" height="54" rx="8"/>
+        <text class="t-title" x="808" y="274">Wall screen</text>
+        <text class="t-body" x="808" y="292">The floor at a glance</text>
 
-        <rect class="box" x="748" y="330" width="216" height="70" rx="8"/>
-        <text class="t-title" x="762" y="352">Desktop and Samwise</text>
-        <text class="t-body" x="762" y="370">Response times, patterns,</text>
-        <text class="t-body" x="762" y="386">"why did this fire"</text>
+        <rect class="box" x="794" y="330" width="222" height="70" rx="8"/>
+        <text class="t-title" x="808" y="352">Desktop and Samwise</text>
+        <text class="t-body" x="808" y="370">Response times, patterns,</text>
+        <text class="t-body" x="808" y="386">"why did this fire"</text>
 
         <!-- staff assist, proposed -->
-        <path class="arrow-dash" d="M856,140 L856,164" marker-end="url(#ah)" color="var(--proposed)"/>
-        <text class="t-prop" x="866" y="157">staff assist, proposed</text>
-
-        <!-- THE RETURN LOOP -->
-        <path class="arrow-acc" d="M856,400 L856,470 L141,470 L141,54" marker-end="url(#ah)" color="var(--accent)"/>
-        <text class="t-acc" x="396" y="462">she walks to room 05, nothing tapped</text>
+        <path class="arrow-dash" d="M870,140 V164" marker-end="url(#ah)" color="var(--proposed)"/>
+        <text class="t-prop" x="880" y="157">staff assist, proposed</text>
 
         <!-- attended path back out -->
-        <path class="arrow-acc" d="M604,210 L676,210 L676,540 L856,540 L856,406" marker-end="url(#ah)" color="var(--accent)"/>
-        <text class="t-acc" x="690" y="556">room marked attended on every screen</text>
+        <path class="arrow-acc" d="M646,209 H726 V500 H860 V406" marker-end="url(#ah)" color="var(--accent)"/>
+        <text class="t-acc" x="724" y="518">room marked attended on every screen</text>
+
+        <!-- THE RETURN LOOP, routed down the outside so it clears every box -->
+        <path class="arrow-acc" d="M962,418 V540 H14 V74 H50" marker-end="url(#ah)" color="var(--accent)"/>
+        <text class="t-acc" x="360" y="532">she walks to room 05, nothing tapped</text>
 
         <!-- step pins -->
-        <circle class="pin" cx="141" cy="128" r="11"/><text class="pin-t" x="141" y="132" text-anchor="middle">1</text>
-        <circle class="pin" cx="668" cy="96" r="11"/><text class="pin-t" x="668" y="100" text-anchor="middle">2</text>
-        <circle class="pin" cx="498" cy="470" r="11"/><text class="pin-t" x="498" y="474" text-anchor="middle">3</text>
-        <circle class="pin" cx="141" cy="252" r="11"/><text class="pin-t" x="141" y="256" text-anchor="middle">4</text>
-        <circle class="pin" cx="676" cy="380" r="11"/><text class="pin-t" x="676" y="384" text-anchor="middle">5</text>
+        <circle class="pin" cx="155" cy="128" r="11"/><text class="pin-t" x="155" y="132" text-anchor="middle">1</text>
+        <circle class="pin" cx="712" cy="98" r="11"/><text class="pin-t" x="712" y="102" text-anchor="middle">2</text>
+        <circle class="pin" cx="300" cy="540" r="11"/><text class="pin-t" x="300" y="544" text-anchor="middle">3</text>
+        <circle class="pin" cx="14" cy="74" r="11"/><text class="pin-t" x="14" y="78" text-anchor="middle">4</text>
+        <circle class="pin" cx="726" cy="380" r="11"/><text class="pin-t" x="726" y="384" text-anchor="middle">5</text>
 
         <!-- step legend -->
-        <text class="t-mono" x="30" y="600">1  03:10  movement matches a fall, 94% confidence</text>
-        <text class="t-mono" x="30" y="618">2  03:10  ranked above everything else, sent to the phone</text>
-        <text class="t-mono" x="30" y="636">3  03:11  she reads room, reason, person and walks</text>
-        <text class="t-mono" x="520" y="618">4  03:13  the same sensor sees a second person enter</text>
-        <text class="t-mono" x="520" y="636">5  03:13  attended, not resolved, on every surface</text>
+        <text class="t-mono" x="34" y="580">1  03:10  movement matches a fall, 94% confidence</text>
+        <text class="t-mono" x="34" y="598">2  03:10  ranked above everything else, sent to the phone</text>
+        <text class="t-mono" x="34" y="616">3  03:11  she reads room, reason, person and walks</text>
+        <text class="t-mono" x="560" y="598">4  03:13  the same sensor sees a second person enter</text>
+        <text class="t-mono" x="560" y="616">5  03:13  attended, not resolved, on every surface</text>
       </svg>
     </div>
     <figcaption>
