@@ -2,9 +2,9 @@
 
 A design study for Teton, by Eriana Panopoulou.
 
-**[Open the prototype](https://ERIANA.github.io/REPO/)** · works best on a phone, screen dimmed.
-**[Read the problem framing](https://ERIANA.github.io/REPO/problem-framing.html)** · the brief, the people, and the eight statements it was built against.
-**[See the system flow](https://ERIANA.github.io/REPO/system-flow.html)** · where the data comes from, and where it goes.
+**[Open the prototype](https://erianapan.github.io/teton-night-shift-triage )** · works best on a phone, screen dimmed.
+**[Read the problem framing](https://erianapan.github.io/teton-night-shift-triage/problem-framing.html)** · the brief, the people, and the eight statements it was built against.
+**[See the system flow](https://erianapan.github.io/teton-night-shift-triage/system-flow.html)** · where the data comes from, and where it goes.
 
 ---
 
