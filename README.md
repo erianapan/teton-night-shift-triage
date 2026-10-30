@@ -2,9 +2,10 @@
 
 A design study for Teton, by Eriana Panopoulou.
 
-**[Open the prototype](https://erianapan.github.io/teton-night-shift-triage )** · works best on a phone, screen dimmed.
+**[Open the prototype](https://erianapan.github.io/teton-night-shift-triage/)** · works best on a phone, screen dimmed.
 **[Read the problem framing](https://erianapan.github.io/teton-night-shift-triage/problem-framing.html)** · the brief, the people, and the eight statements it was built against.
 **[See the system flow](https://erianapan.github.io/teton-night-shift-triage/system-flow.html)** · where the data comes from, and where it goes.
+**[Open the handover dashboard](https://erianapan.github.io/teton-night-shift-triage/dashboard.html)** · the morning after: what the night added up to, read by the night and day teams together.
 
 ---
 
@@ -44,17 +45,20 @@ Two limits worth stating. The sensor sees a person, not a named person, so ident
 | *Concept A / Concept B* | Two placements for escalation, built so they can be compared rather than argued about |
 | *Show a quiet night* | The night where nothing is wrong, which is most nights and which most monitoring products never design |
 | Open *Shift review* at the bottom | The hour chart, folded away, labelled for the handover meeting |
+| Open `dashboard.html` | The handover meeting itself: the same night, reviewed at 07:45 on a shared touchscreen |
 
 ## What is in here
 
-- `index.html` — the prototype. One file, no build step, no dependencies. Open it in a browser.
-- `problem-framing.html` — the brief, the people awake at 03:00, the problem statement, five principles and eight user stories, each traced to the decision it produced
-- `system-flow.html` — the drawn system flow: one fall in room 05 traced through the sensors, the platform and every screen, and back in through the door
-- `notes/01-problem.md` — the alert volume problem, from Teton's published figures
-- `notes/02-design-log.md` — four rounds of critique and what changed each time
-- `notes/03-system-context.md` — how this screen connects to the sensors, the wall screen, Samwise and E-Call
-- `notes/04-assumptions-and-questions.md` — what it assumes Teton has, what it assumes they would need, and what I would want from one night shift on site
-- `notes/05-critique-notes.md` — the notes I wrote while testing each version, in the order I wrote them
+- `index.html`: the prototype. One file, no build step, no dependencies. Open it in a browser.
+- `problem-framing.html`: the brief, the people awake at 03:00, the problem statement, five principles and eight user stories, each traced to the decision it produced
+- `dashboard.html`: the handover dashboard. Last night, the week and the month, with the residents at risk today
+- `system-flow.html`: the drawn system flow: one fall in room 05 traced through the sensors, the platform and every screen, and back in through the door
+- `notes/01-problem.md`: the alert volume problem, from Teton's published figures
+- `notes/02-design-log.md`: four rounds of critique and what changed each time
+- `notes/03-system-context.md`: how this screen connects to the sensors, the wall screen, Samwise and E-Call
+- `notes/04-assumptions-and-questions.md`: what it assumes Teton has, what it assumes they would need, and what I would want from one night shift on site
+- `notes/05-critique-notes.md`: the notes I wrote while testing each version, in the order I wrote them
+- `notes/06-handover-dashboard.md`: who the dashboard is for, how it is read, and how it builds on the phone prototype
 
 ## How it was made
 

@@ -1,0 +1,1141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Handover Dashboard</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+  /* Handover dashboard: read at a desk at 07:45 by the night team and the
+     incoming day team together. Same residents, events and staff as the
+     night-shift phone screen. Order on the page follows the handover
+     conversation: who is here, what changed for whom, what happened when
+     someone needed us, and how heavy the night was. */
+
+  :root {
+    color-scheme: light;
+    --bg: #f5f6f8;
+    --surface: #ffffff;
+    --surface-2: #f0f2f5;
+    --line: #e1e4e8;
+    --grid: #e6e8ec;
+    --base: #c3c7cd;
+
+    --ink: #0f1720;
+    --ink-2: #4b5563;
+    --ink-3: #6b7280;
+
+    --accent: #2a78d6;
+
+    --t-now: #e34948;
+    --t-round: #eda100;
+    --t-later: #2a78d6;
+    --reach: #6250d6;
+
+    --good-ink: #006300;
+    --bad-ink: #b42323;
+    --warn: #fab219;
+    --crit: #d03b3b;
+    --good: #0ca30c;
+
+    --proposed: #7c5ac9;
+
+    --sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0e1116;
+      --surface: #161b22;
+      --surface-2: #1d242e;
+      --line: #2a323d;
+      --grid: #232a34;
+      --base: #3a434f;
+      --ink: #e6edf3;
+      --ink-2: #a3afbb;
+      --ink-3: #8592a0;
+      --accent: #5eb0ef;
+      --t-now: #c93a3a;
+      --t-round: #c98500;
+      --t-later: #3987e5;
+      --reach: #9085e9;
+      --good-ink: #3ccf3c;
+      --bad-ink: #f08080;
+      --proposed: #b49cf0;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0e1116;
+    --surface: #161b22;
+    --surface-2: #1d242e;
+    --line: #2a323d;
+    --grid: #232a34;
+    --base: #3a434f;
+    --ink: #e6edf3;
+    --ink-2: #a3afbb;
+    --ink-3: #8592a0;
+    --accent: #5eb0ef;
+    --t-now: #c93a3a;
+    --t-round: #c98500;
+    --t-later: #3987e5;
+    --reach: #9085e9;
+    --good-ink: #3ccf3c;
+    --bad-ink: #f08080;
+    --proposed: #b49cf0;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    color: var(--ink);
+    font-size: 15px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 0 24px 56px; }
+
+  h1, h2, h3, p { margin: 0; }
+  button { font: inherit; color: inherit; }
+
+  /* ---------- header ---------- */
+  .top {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    gap: 16px 24px; flex-wrap: wrap;
+    padding: 28px 0 20px;
+  }
+  .eyebrow { font-size: 12px; color: var(--ink-3); letter-spacing: 0.02em; }
+  .top h1 { font-size: 26px; font-weight: 600; letter-spacing: -0.01em; margin-top: 2px; }
+  .top .sub { color: var(--ink-2); margin-top: 4px; }
+  .controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+  /* the line between what is always true today and what the switch changes */
+  .period-bar {
+    display: flex; justify-content: space-between; align-items: flex-end; gap: 14px 24px; flex-wrap: wrap;
+    margin: 24px 0 16px; padding-top: 22px; border-top: 1px solid var(--line);
+  }
+  .period-bar h2 { font-size: 20px; font-weight: 600; letter-spacing: -0.005em; }
+  .period-bar .sub { color: var(--ink-2); margin-top: 3px; }
+
+  /* touch: every control is at least 44px tall */
+  .seg {
+    display: inline-flex; background: var(--surface-2); border: 1px solid var(--line);
+    border-radius: 10px; padding: 4px;
+  }
+  .seg button {
+    border: 0; background: none; padding: 0 20px; min-height: 44px; border-radius: 7px; cursor: pointer;
+    color: var(--ink-2); font-weight: 500; font-size: 15px;
+  }
+  .seg button[aria-pressed="true"] {
+    background: var(--surface); color: var(--ink);
+    box-shadow: 0 0 0 1px var(--line), 0 1px 2px rgb(0 0 0 / 0.06);
+  }
+  .seg button:focus-visible, .ghost:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .ghost {
+    border: 1px solid var(--line); background: var(--surface); border-radius: 8px;
+    padding: 0 14px; min-height: 44px; cursor: pointer; color: var(--ink-2); display: inline-flex; gap: 6px; align-items: center;
+  }
+  .ghost:hover { color: var(--ink); }
+  .ghost svg { width: 15px; height: 15px; }
+
+  /* ---------- cards ---------- */
+  .grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 16px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    padding: 18px 20px; min-width: 0;
+  }
+  .card h2 { font-size: 15px; font-weight: 600; }
+  .card .hint { color: var(--ink-3); font-size: 12.5px; margin-top: 2px; }
+  .card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+  .span-12 { grid-column: span 12; }
+  .span-7 { grid-column: span 7; }
+  .span-5 { grid-column: span 5; }
+  .span-6 { grid-column: span 6; }
+  .span-3 { grid-column: span 3; }
+  .section-gap { margin-top: 16px; }
+
+  .tag-proposed {
+    display: inline-block; font-size: 11px; font-weight: 500; color: var(--proposed);
+    border: 1px dashed var(--proposed); border-radius: 4px; padding: 0 5px; margin-left: 6px;
+    vertical-align: 1px; white-space: nowrap;
+  }
+
+  /* ---------- staff ---------- */
+  .staff-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 12px; }
+  .staff-head .when { font-family: var(--mono); font-size: 12.5px; color: var(--ink-3); }
+  .people { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
+  .person {
+    display: flex; gap: 10px; align-items: center; padding: 8px 10px;
+    background: var(--surface-2); border-radius: 8px; min-width: 0;
+  }
+  .avatar {
+    flex: 0 0 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+    font-size: 12px; font-weight: 600; background: var(--surface); border: 1px solid var(--line); color: var(--ink-2);
+  }
+  .person[data-lead="true"] .avatar { border-color: var(--ink); color: var(--ink); }
+  .person .nm { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .person .rl { font-size: 12px; color: var(--ink-3); }
+  .person .ct { margin-left: auto; font-family: var(--mono); font-size: 12px; color: var(--ink-2); white-space: nowrap; }
+  .person > div { min-width: 0; }
+  .handoff-note { margin-top: 10px; font-size: 12.5px; color: var(--ink-2); }
+
+  /* Today's staff: same parts, more presence. A tinted plane, an accent edge,
+     a live "on shift now" marker and larger people. Last night's staff sits
+     back on the page plane with smaller chips. */
+  .staff-today {
+    background: color-mix(in srgb, var(--accent) 5%, var(--surface));
+    border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+    box-shadow: inset 4px 0 0 var(--accent);
+    padding: 20px 22px 20px 26px;
+  }
+  .staff-today h2 { font-size: 17px; }
+  .staff-today .people { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+  .staff-today .person { background: var(--surface); padding: 10px 12px; box-shadow: 0 0 0 1px var(--line); }
+  .staff-today .avatar { flex-basis: 40px; height: 40px; font-size: 13px; }
+  .staff-today .person .nm { font-size: 15.5px; }
+  .staff-today .person .rl { font-size: 12.5px; }
+  .live { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 500; color: var(--ink); margin-left: 10px; vertical-align: 2px; }
+  .live i { width: 8px; height: 8px; border-radius: 50%; background: var(--good); box-shadow: 0 0 0 3px color-mix(in srgb, var(--good) 22%, transparent); }
+
+  .staff-past { background: transparent; }
+  .staff-past h2 { font-size: 15px; color: var(--ink-2); font-weight: 500; }
+  .staff-past .person { padding: 6px 10px; }
+  .staff-past .avatar { flex-basis: 28px; height: 28px; font-size: 11px; }
+  .staff-past .person .nm { color: var(--ink-2); }
+  .staff-grid { display: grid; gap: 12px; }
+
+  /* ---------- KPI tiles ---------- */
+  .tile { display: flex; flex-direction: column; gap: 4px; }
+  .tile .lbl { font-size: 13px; color: var(--ink-2); }
+  .tile .val { font-size: 30px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.15; }
+  .tile .val small { font-size: 15px; font-weight: 500; color: var(--ink-2); margin-left: 2px; }
+  .tile.hero .val { font-size: 48px; }
+  .tile .detail { font-size: 12.5px; color: var(--ink-3); }
+  .delta { font-size: 12.5px; display: inline-flex; gap: 4px; align-items: center; }
+  .delta[data-dir="good"] { color: var(--good-ink); }
+  .delta[data-dir="bad"] { color: var(--bad-ink); }
+  .delta[data-dir="flat"] { color: var(--ink-3); }
+
+  /* ---------- residents who changed ---------- */
+  .changes { list-style: none; margin: 0; padding: 0; }
+  .change {
+    display: grid; grid-template-columns: 72px minmax(0, 1fr) 150px 132px; gap: 16px; align-items: center;
+    padding: 12px 0; border-top: 1px solid var(--line);
+  }
+  .change:first-child { border-top: 0; padding-top: 2px; }
+  .c-room { font-family: var(--mono); font-size: 18px; font-weight: 500; line-height: 1.2; }
+  .c-room small { display: block; font-family: var(--sans); font-size: 11px; color: var(--ink-3); font-weight: 400; }
+  .c-who { font-weight: 600; }
+  .c-what { color: var(--ink-2); margin-top: 2px; }
+  .pill {
+    display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px;
+    background: color-mix(in srgb, var(--t-round) 22%, transparent); color: var(--ink); margin-left: 6px; vertical-align: 1px;
+  }
+  .kind { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 500; color: var(--ink); }
+  .kind svg { width: 14px; height: 14px; flex: 0 0 14px; }
+  .kind[data-k="fall"] svg { color: var(--crit); }
+  .kind[data-k="up"] svg { color: var(--warn); }
+  .kind[data-k="silent"] svg { color: var(--ink-2); }
+  .kind[data-k="down"] svg { color: var(--good); }
+  .spark { display: block; }
+  .spark-cap { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+  .empty { color: var(--ink-3); padding: 8px 0; }
+
+  /* ---------- residents at risk ---------- */
+  .risk-row {
+    display: grid; align-items: center; gap: 14px;
+    grid-template-columns: 64px minmax(150px, 1.1fr) minmax(200px, 1.2fr) minmax(160px, 1fr) 150px 84px;
+    padding: 10px 0; border-top: 1px solid var(--line);
+  }
+  .risk-head { border-top: 0; padding-top: 0; font-size: 12px; font-weight: 500; color: var(--ink-3); }
+  .risk-row .c-room { font-size: 16px; }
+  .risk-row .c-what { margin-top: 0; color: var(--ink); }
+  .room-long { font-size: 12px; }
+  .flags { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
+  .flags .pill { margin-left: 0; }
+  .details-btn { padding: 0 14px; min-height: 40px; font-size: 13.5px; }
+
+  /* ---------- urgent table ---------- */
+  table { border-collapse: collapse; width: 100%; }
+  th, td { text-align: left; padding: 9px 10px 9px 0; vertical-align: top; }
+  th { font-size: 12px; font-weight: 500; color: var(--ink-3); border-bottom: 1px solid var(--line); white-space: nowrap; }
+  td { border-bottom: 1px solid var(--line); }
+  tr:last-child td { border-bottom: 0; }
+  td.num, th.num { font-variant-numeric: tabular-nums; font-family: var(--mono); font-size: 13px; }
+  td.mono { font-family: var(--mono); font-size: 13px; white-space: nowrap; }
+  .what-cell { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+  .sw { width: 8px; height: 8px; border-radius: 2px; flex: 0 0 8px; }
+  .note { color: var(--ink-3); font-size: 12.5px; margin-top: 2px; }
+  .slow { display: inline-flex; gap: 4px; align-items: center; color: var(--ink); font-size: 12px; font-weight: 500; margin-left: 6px; font-family: var(--sans); }
+  .slow svg { width: 13px; height: 13px; color: var(--warn); }
+  .table-scroll { overflow-x: auto; }
+
+  /* ---------- charts ---------- */
+  .chart { position: relative; }
+  .chart svg { display: block; overflow: visible; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--ink-2); margin: 0 0 10px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .axis-text { fill: var(--ink-3); font-size: 11px; font-family: var(--sans); }
+  .axis-text.mono { font-family: var(--mono); }
+  .ann-text { fill: var(--ink-2); font-size: 11.5px; font-family: var(--sans); }
+  .stat-line { display: flex; gap: 22px; flex-wrap: wrap; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+  .stat-line div { font-size: 12.5px; color: var(--ink-3); }
+  .stat-line b { display: block; color: var(--ink); font-size: 16px; font-weight: 600; }
+  .data-table { display: none; margin-top: 8px; max-height: 280px; overflow: auto; }
+  .card[data-table="true"] .data-table { display: block; }
+  .card[data-table="true"] .chart { display: none; }
+
+  .sublist { list-style: none; margin: 14px 0 0; padding: 12px 0 0; border-top: 1px solid var(--line); }
+  .sublist h3 { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .sublist li { display: grid; grid-template-columns: 112px 52px minmax(0, 1fr) auto; gap: 10px; padding: 5px 0; font-size: 13px; align-items: baseline; }
+  .sublist li .mono:first-child { white-space: nowrap; }
+  .top-align { align-items: start; }
+  .sublist .mono { font-family: var(--mono); font-size: 12.5px; color: var(--ink-2); }
+
+  #tip {
+    position: fixed; pointer-events: none; z-index: 10; background: var(--surface); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 12.5px;
+    box-shadow: 0 6px 20px rgb(0 0 0 / 0.14); opacity: 0; transition: opacity 80ms; min-width: 150px;
+  }
+  #tip .t-h { font-weight: 600; margin-bottom: 4px; }
+  #tip .t-r { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
+  #tip .t-r span:first-child { display: inline-flex; gap: 6px; align-items: center; color: var(--ink-2); }
+  #tip .t-r b { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+  /* ---------- footer ---------- */
+  footer { margin-top: 20px; color: var(--ink-3); font-size: 12.5px; display: grid; gap: 6px; max-width: 900px; }
+  footer a { color: var(--ink-2); }
+
+  @media (max-width: 1000px) {
+    .span-7, .span-5, .span-6 { grid-column: span 12; }
+    .span-3 { grid-column: span 6; }
+  }
+  @media (max-width: 720px) {
+    .wrap { padding: 0 16px 40px; }
+    .span-3 { grid-column: span 12; }
+    .risk-row { grid-template-columns: 52px minmax(0, 1fr) auto; gap: 4px 12px; }
+    .risk-row .spark-wrap { display: none; }
+    .risk-head { display: none; }
+    .risk-row .c-room { grid-row: span 3; align-self: start; }
+    .risk-row .c-who, .risk-row .flags, .risk-row .c-what { grid-column: 2; }
+    .risk-row > span:last-child { grid-column: 3; grid-row: 1; }
+    .tile.hero .val { font-size: 40px; }
+    .sublist li { grid-template-columns: 64px 44px minmax(0, 1fr); }
+    .sublist li .r { grid-column: 3; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <p class="eyebrow">Ground floor &middot; 20 residents</p>
+      <h1>Morning handover</h1>
+      <p class="sub">Friday 30 October 2026 &middot; 07:45</p>
+    </div>
+    <div class="controls">
+      <button type="button" class="ghost" id="theme-btn" aria-label="Switch light or dark">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5.5"/><path d="M8 2.5a5.5 5.5 0 0 0 0 11z" fill="currentColor"/></svg>
+        <span id="theme-label">Dark</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- always visible: who is here today, who was here last night -->
+  <section class="grid" aria-label="Staff">
+    <div class="card span-12 staff-today" id="staff-day"></div>
+    <div class="card span-12 staff-past" id="staff-night"></div>
+  </section>
+
+  <!-- everything below follows the period switch -->
+  <div class="period-bar">
+    <div>
+      <h2 id="title">What happened last night</h2>
+      <p class="sub" id="subtitle"></p>
+    </div>
+    <div class="seg" role="group" aria-label="Period">
+      <button type="button" data-period="night" aria-pressed="true">Last night</button>
+      <button type="button" data-period="week" aria-pressed="false">Week</button>
+      <button type="button" data-period="month" aria-pressed="false">Month</button>
+    </div>
+  </div>
+
+  <!-- how heavy the night was -->
+  <section class="grid">
+    <div class="card span-12" id="load-card">
+      <div class="card-head">
+        <div>
+          <h2 id="load-title">How heavy the night was</h2>
+          <p class="hint" id="load-hint"></p>
+        </div>
+        <button type="button" class="ghost" data-table-toggle="load-card">Table</button>
+      </div>
+      <div class="legend" id="load-legend"></div>
+      <div class="chart" id="load-chart"></div>
+      <div class="data-table" id="load-table"></div>
+      <div class="stat-line" id="load-stats"></div>
+    </div>
+  </section>
+
+  <!-- the numbers -->
+  <section class="grid section-gap" aria-label="Key figures" id="kpis"></section>
+
+  <!-- residents at risk today -->
+  <section class="grid section-gap">
+    <div class="card span-12">
+      <div class="card-head">
+        <div>
+          <h2>Residents at risk today</h2>
+          <p class="hint" id="risk-hint"></p>
+        </div>
+      </div>
+      <div class="risk-table" role="table" aria-label="Residents at risk today" id="risk"></div>
+    </div>
+  </section>
+
+  <!-- urgent alerts -->
+  <section class="grid section-gap">
+    <div class="card span-12" id="urgent-card">
+      <div class="card-head">
+        <div>
+          <h2>When someone needed us</h2>
+          <p class="hint" id="urgent-hint"></p>
+        </div>
+      </div>
+      <div id="urgent-body"></div>
+    </div>
+  </section>
+
+  <footer>
+    <p><b>Synthetic data.</b> The same 20 invented residents, event types and staff as the
+      <a href="index.html">night-shift phone screen</a>, extended to 60 nights. Last night contains the 03:10 fall in room 05 from the prototype.</p>
+    <p><b>Published by Teton:</b> fall, bed-exit and stillness events, E-Call, per-resident fall risk, staff detected entering rooms.
+      <span class="tag-proposed">Proposed</span> marks what this page assumes Teton would add: knowing <i>which</i> colleague entered (from the phone on shift), the colleague-assist call, and closing notes written at the bedside.</p>
+    <p>Time to reach the room is measured from the alert to the moment the room sensor sees a second person come in. Nobody taps anything, so the number is not a record of who remembered to press a button.</p>
+  </footer>
+</div>
+
+<div id="tip" role="tooltip"></div>
+
+<script>
+(() => {
+  // ================= data =================
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  const rand = mulberry32(20261030);
+  const poisson = (l) => { const L = Math.exp(-l); let k = 0, p = 1; do { k++; p *= rand(); } while (p > L); return k - 1; };
+
+  const NIGHTS = 60, LAST = 59;
+  const LAST_DATE = Date.UTC(2026, 9, 29); // evening the last night started
+  const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const DOW_L = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const MON = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const dateOf = (i) => new Date(LAST_DATE - (LAST - i) * 86400000);
+  const shortDay = (i) => { const d = dateOf(i); return DOW[d.getUTCDay()] + " " + d.getUTCDate(); };
+  const longDay = (i) => { const d = dateOf(i); return DOW[d.getUTCDay()] + " " + d.getUTCDate() + " " + MON[d.getUTCMonth()].slice(0, 3); };
+
+  const KINDS = {
+    fall:      { tier: "now", what: "Possible fall" },
+    assist:    { tier: "now", what: "Colleague needs help" },
+    call:      { tier: "now", what: "Call button" },
+    bedexit:   { tier: "round", what: "Out of bed" },
+    stillness: { tier: "round", what: "No movement" },
+    restless:  { tier: "later", what: "Restless sleep" }
+  };
+  const TIERS = [
+    { key: "now", label: "Go now", hint: "falls, call buttons, colleague help", color: "var(--t-now)" },
+    { key: "round", label: "Next round", hint: "out of bed, no movement", color: "var(--t-round)" },
+    { key: "later", label: "Later", hint: "restless sleep", color: "var(--t-later)" }
+  ];
+
+  const RESIDENTS = [
+    { name: "Inger Dahl", room: "01", risk: "low" },
+    { name: "Poul Vestergaard", room: "02", risk: "low" },
+    { name: "Margrethe Sørensen-Lundqvist", room: "03", risk: "high" },
+    { name: "Bent Nygaard", room: "04", risk: "low" },
+    { name: "Karen Lindholm", room: "05", risk: "high" },
+    { name: "Ebbe Thrane", room: "06", risk: "low" },
+    { name: "Ruth Kjeldsen", room: "07", risk: "high" },
+    { name: "Svend Aage Holm", room: "08", risk: "low" },
+    { name: "Lis Winther", room: "09", risk: "low" },
+    { name: "Aksel Brandt", room: "10", risk: "low" },
+    { name: "Gudrun Mølgaard", room: "11", risk: "high" },
+    { name: "Tove Rasmussen", room: "12", risk: "low" },
+    { name: "Henning Due", room: "14B", risk: "low" },
+    { name: "Esther Falk", room: "Ward 3, Bed B", risk: "low" },
+    { name: "Villy Ponsaing", room: null, risk: "low" },
+    { name: "Asta Bjerre", room: "17", risk: "low" },
+    { name: "Mogens Juhl", room: "18", risk: "low" },
+    { name: "Dagny Krogh", room: "19", risk: "low" },
+    { name: "Ole Strandgaard", room: "20", risk: "low" },
+    { name: "Birthe Lange", room: "21", risk: "low" }
+  ];
+  const by = (n) => RESIDENTS.find((r) => r.name === n);
+  const roomOf = (r) => r.room === null ? "?" : r.room;
+  const SILENT = new Set(["Dagny Krogh", "Ole Strandgaard", "Birthe Lange"]);
+  const HEAVY = "Margrethe Sørensen-Lundqvist";
+
+  const HOUR_WEIGHT = [0.5, 0.6, 0.8, 1.0, 1.2, 1.5, 1.8, 2.0, 1.7, 1.2, 0.9, 0.7];
+  const HW_TOTAL = HOUR_WEIGHT.reduce((a, b) => a + b, 0);
+  function weightedMinute() {
+    let r = rand() * HW_TOTAL;
+    for (let h = 0; h < 12; h++) { r -= HOUR_WEIGHT[h]; if (r <= 0) return h * 60 + Math.floor(rand() * 60); }
+    return 11 * 60 + Math.floor(rand() * 60);
+  }
+  const ROUTINE = [["bedexit", 0.27], ["stillness", 0.23], ["restless", 0.5]];
+  const pickRoutine = () => { let r = rand(); for (const [k, w] of ROUTINE) { r -= w; if (r <= 0) return k; } return "restless"; };
+
+  // staff
+  const NIGHT_POOL = ["Sofie", "Jonas", "Emil", "Nadia"];
+  const COORD_POOL = ["Mette", "Karsten"];
+  const PEOPLE = {
+    Sofie:   { full: "Sofie Brandt", role: "Care assistant" },
+    Jonas:   { full: "Jonas Lund", role: "Care assistant" },
+    Emil:    { full: "Emil Hauge", role: "Care assistant" },
+    Nadia:   { full: "Nadia Karimi", role: "Care assistant" },
+    Mette:   { full: "Mette Ravn", role: "Night coordinator, nurse" },
+    Karsten: { full: "Karsten Bech", role: "Night coordinator, nurse" }
+  };
+  const ROTA = [];
+  for (let i = 0; i < NIGHTS; i++) {
+    const a = NIGHT_POOL[(i * 3) % 4], b = NIGHT_POOL[(i * 3 + 1 + (i % 2)) % 4];
+    ROTA.push({ staff: a === b ? [a, NIGHT_POOL[(i + 2) % 4]] : [a, b], coord: COORD_POOL[Math.floor(i / 3) % 2] });
+  }
+  ROTA[LAST] = { staff: ["Sofie", "Jonas"], coord: "Mette" };
+
+  const resBase = {};
+  for (const r of RESIDENTS) resBase[r.name] = 5 + Math.floor(rand() * 8);
+  resBase[HEAVY] = 9;
+
+  const EVENTS = [];   // {night, minute, kind, res, reach?, who?, note?}
+  const ESC = [];      // {night, minute, level, res, note}
+
+  const pickRes = () => {
+    const pool = RESIDENTS.flatMap((r) => r.risk === "high" ? [r, r, r] : [r]);
+    return pool[Math.floor(rand() * pool.length)];
+  };
+
+  for (let i = 0; i < NIGHTS; i++) {
+    for (const r of RESIDENTS) {
+      let n = Math.round(resBase[r.name] * (0.75 + rand() * 0.5));
+      if (r.name === "Aksel Brandt" && i >= 53) n = Math.round(n * 0.35);
+      if (SILENT.has(r.name) && i === LAST) n = 0;
+      if (r.name === HEAVY && i >= 56) {
+        n = [17, 24, 31, 46][i - 56];
+        for (let k = 0; k < n; k++) {
+          const late = i === LAST && k >= 6;
+          EVENTS.push({ night: i, minute: late ? 360 + Math.floor(rand() * 180) : weightedMinute(), kind: rand() < 0.8 ? "restless" : "bedexit", res: r });
+        }
+        continue;
+      }
+      for (let k = 0; k < n; k++) EVENTS.push({ night: i, minute: weightedMinute(), kind: pickRoutine(), res: r });
+      if (r.name === "Ruth Kjeldsen" && i >= 53) {
+        const extra = [2, 2, 3, 3, 4, 4, 5][i - 53];
+        for (let k = 0; k < extra; k++) EVENTS.push({ night: i, minute: weightedMinute(), kind: "bedexit", res: r });
+      }
+    }
+
+    if (i === LAST) continue;
+    const staff = ROTA[i].staff;
+    const nCalls = poisson(3.4);
+    for (let k = 0; k < nCalls; k++) {
+      const slow = rand() < 0.08;
+      EVENTS.push({ night: i, minute: weightedMinute(), kind: "call", res: pickRes(),
+        reach: Math.round(slow ? 300 + rand() * 420 : 45 + rand() * 170), who: staff[Math.floor(rand() * 2)] });
+    }
+    const nAssist = poisson(0.35);
+    for (let k = 0; k < nAssist; k++) {
+      EVENTS.push({ night: i, minute: weightedMinute(), kind: "assist", res: pickRes(),
+        reach: Math.round(60 + rand() * 240), who: rand() < 0.5 ? staff[1] : ROTA[i].coord });
+    }
+    if (i === 42 || rand() < 0.06) {
+      const res = i === 42 ? by("Karen Lindholm") : pickRes();
+      EVENTS.push({ night: i, minute: i === 42 ? 512 : weightedMinute(), kind: "fall", res,
+        reach: Math.round(70 + rand() * 140), who: staff[0],
+        note: i === 42 ? "Found on the bathroom floor. Bruised forearm, day team told." : "Attended. No injury seen." });
+      if (rand() < 0.6 || i === 42) ESC.push({ night: i, minute: 530, level: "oncall", res });
+    }
+    if (rand() < 0.28) ESC.push({ night: i, minute: weightedMinute(), level: "coord", res: pickRes() });
+    if (rand() < 0.12) ESC.push({ night: i, minute: weightedMinute(), level: "oncall", res: pickRes() });
+    if (i === 38) ESC.push({ night: i, minute: 395, level: "ambulance", res: by("Svend Aage Holm"), note: "Chest pain. Taken to Herlev, back next day." });
+  }
+
+  // last night, hand-written so it matches the phone prototype at 03:12
+  const LN = [
+    [107, "call", "Lis Winther", 130, "Sofie", "Wanted water and the blinds closed."],
+    [185, "call", HEAVY, 65, "Jonas", "Could not settle. Sat with her for ten minutes."],
+    [272, "call", "Gudrun Mølgaard", 220, "Jonas", "Needed help to the toilet."],
+    [381, "call", "Henning Due", 110, "Sofie", "Pillow and duvet on the floor."],
+    [423, "call", "Gudrun Mølgaard", 660, "Jonas", "Waited behind the fall in 05 and the call for help in 07."],
+    [428, "assist", "Ruth Kjeldsen", 420, "Mette", "Jonas asked for a second pair of hands. Two-person transfer back to bed."],
+    [430, "fall", "Karen Lindholm", 180, "Sofie", "Sitting on the floor by the bed. No injury seen. On-call nurse checked her at 03:41."],
+    [552, "call", "Poul Vestergaard", 90, "Sofie", "Asked what time it was."],
+    [640, "call", "Ruth Kjeldsen", 120, "Jonas", "Out of bed, wanted help to the bathroom."]
+  ];
+  for (const [minute, kind, name, reach, who, note] of LN) EVENTS.push({ night: LAST, minute, kind, res: by(name), reach, who, note });
+  ESC.push({ night: LAST, minute: 434, level: "coord", res: by("Ruth Kjeldsen") });
+  ESC.push({ night: LAST, minute: 440, level: "oncall", res: by("Karen Lindholm") });
+
+  // index
+  const perNight = Array.from({ length: NIGHTS }, () => []);
+  for (const e of EVENTS) perNight[e.night].push(e);
+
+  // ================= helpers =================
+  const hourLabel = (h) => String((20 + h) % 24).padStart(2, "0") + "–" + String((21 + h) % 24).padStart(2, "0");
+  const fmtTime = (m) => String((20 + Math.floor(m / 60)) % 24).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
+  const fmtReach = (s) => { const m = Math.floor(s / 60), r = Math.round(s % 60); return m + ":" + String(r).padStart(2, "0"); };
+  const fmtReachLong = (s) => { const m = Math.floor(s / 60), r = Math.round(s % 60); return m ? (r ? m + " min " + r + " s" : m + " min") : r + " s"; };
+  const median = (a) => { if (!a.length) return null; const s = [...a].sort((x, y) => x - y); const h = s.length >> 1; return s.length % 2 ? s[h] : (s[h - 1] + s[h]) / 2; };
+  const sum = (a) => a.reduce((x, y) => x + y, 0);
+  const range = (a, b) => Array.from({ length: b - a + 1 }, (_, k) => a + k);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const initials = (n) => n.split(" ").map((p) => p[0]).slice(0, 2).join("");
+  const plural = (n, one, many) => n + " " + (n === 1 ? one : (many || one + "s"));
+
+  const PERIODS = {
+    night: { nights: [LAST], base: range(LAST - 7, LAST - 1), baseWord: "her usual night (last 7 nights)", spark: range(LAST - 13, LAST),
+             title: "What happened last night" },
+    week:  { nights: range(LAST - 6, LAST), base: range(LAST - 27, LAST - 7), baseWord: "the 3 weeks before", spark: range(LAST - 27, LAST),
+             title: "The last 7 nights" },
+    month: { nights: range(LAST - 29, LAST), base: range(0, LAST - 30), baseWord: "the 30 nights before", spark: range(0, LAST),
+             title: "The last 30 nights" }
+  };
+
+  const ICON = {
+    fall: '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.2 15.2 14.5H.8z"/><path d="M8 6v4M8 11.6v.8" stroke="var(--surface)" stroke-width="1.6" stroke-linecap="round"/></svg>',
+    up: '<svg viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="7"/><path d="M8 11.5V5M5.2 7.6 8 4.8l2.8 2.8" stroke="var(--surface)" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    down: '<svg viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="7"/><path d="M8 4.5V11M5.2 8.4 8 11.2l2.8-2.8" stroke="var(--surface)" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    silent: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 6.5a9 9 0 0 1 12 0M4.3 9a5.6 5.6 0 0 1 7.4 0"/><circle cx="8" cy="12" r="1" fill="currentColor"/><path d="M2.5 2.5l11 11"/></svg>',
+    slow: '<svg viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="7"/><path d="M8 4.5V8l2.2 1.6" stroke="var(--surface)" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>'
+  };
+
+  // ================= period summary =================
+  function summarise(nights) {
+    const ev = nights.flatMap((i) => perNight[i]);
+    const urgent = ev.filter((e) => KINDS[e.kind].tier === "now");
+    const escs = ESC.filter((x) => nights.includes(x.night));
+    return {
+      ev, urgent,
+      n: nights.length,
+      falls: urgent.filter((e) => e.kind === "fall").length,
+      calls: urgent.filter((e) => e.kind === "call").length,
+      assists: urgent.filter((e) => e.kind === "assist").length,
+      reachMed: median(urgent.map((e) => e.reach)),
+      perRes: ev.length / RESIDENTS.length / nights.length,
+      escs,
+      coord: escs.filter((x) => x.level === "coord").length,
+      oncall: escs.filter((x) => x.level === "oncall").length,
+      amb: escs.filter((x) => x.level === "ambulance").length,
+      pushed: ev.filter((e) => KINDS[e.kind].tier !== "later").length
+    };
+  }
+
+  // ================= render: header + staff =================
+  let period = "night";
+
+  function renderHeader() {
+    const P = PERIODS[period];
+    document.getElementById("title").textContent = P.title;
+    const a = dateOf(P.nights[0]), b = dateOf(P.nights[P.nights.length - 1]);
+    const next = new Date(b.getTime() + 86400000);
+    let sub;
+    if (period === "night") sub = "Night of " + DOW_L[b.getUTCDay()] + " " + b.getUTCDate() + " to " + DOW_L[next.getUTCDay()] + " " + next.getUTCDate() + " " + MON[next.getUTCMonth()] + " · 20:00 to 08:00";
+    else sub = "Nights from " + DOW_L[a.getUTCDay()] + " " + a.getUTCDate() + " " + MON[a.getUTCMonth()] + " to " + DOW_L[b.getUTCDay()] + " " + b.getUTCDate() + " " + MON[b.getUTCMonth()] + " · compared with " + P.baseWord.replace("her usual night (last 7 nights)", "the week before");
+    document.getElementById("subtitle").textContent = sub;
+  }
+
+  function personLi(key, extra, lead) {
+    const p = PEOPLE[key] || key;
+    return '<li class="person"' + (lead ? ' data-lead="true"' : "") + '><span class="avatar">' + initials(p.full) + "</span>" +
+      '<div><div class="nm">' + esc(p.full) + '</div><div class="rl">' + esc(p.role) + "</div></div>" +
+      (extra ? '<span class="ct">' + extra + "</span>" : "") + "</li>";
+  }
+
+  // The staff cards do not change with the period: the handover is always
+  // from last night to today. No per-person counts, because this page can
+  // sit on a shared screen and is not one person's own dashboard.
+  function renderStaff() {
+    const r = ROTA[LAST];
+    document.getElementById("staff-night").innerHTML =
+      '<div class="staff-head"><h2>Last night\'s staff</h2><span class="when">Thu 29 Oct · 20:00 to 08:00</span></div>' +
+      '<ul class="people">' +
+      r.staff.map((k) => personLi(k, "")).join("") +
+      personLi(r.coord, "", true) +
+      personLi({ full: "Lars Winding", role: "On-call nurse, off site" }, "") +
+      "</ul>";
+    document.getElementById("staff-day").innerHTML =
+      '<div class="staff-head"><h2>Today\'s staff<span class="live"><i></i>On shift now</span></h2><span class="when">Fri 30 Oct · 08:00 to 16:00</span></div>' +
+      '<ul class="people">' +
+      personLi({ full: "Hanne Kjær", role: "Head nurse" }, "", true) +
+      personLi({ full: "Mikkel Aagaard", role: "Nurse" }, "") +
+      personLi({ full: "Fatima Ali", role: "Care assistant" }, "") +
+      personLi({ full: "Rasmus Holt", role: "Care assistant" }, "") +
+      personLi({ full: "Ida Brix", role: "Care assistant, student" }, "") +
+      "</ul>";
+  }
+
+  // ================= render: KPI tiles =================
+  // the usual value is stated, not the arithmetic between the two
+  function delta(cur, base, lowerIsBetter, unit, digits) {
+    if (base == null || cur == null) return "";
+    const d = cur - base;
+    const rel = base ? Math.abs(d) / base : 0;
+    if (rel < 0.08) return '<span class="delta" data-dir="flat">About usual</span>';
+    const better = lowerIsBetter ? d < 0 : d > 0;
+    const arrow = d > 0 ? "↑" : "↓";
+    const txt = unit === "time"
+      ? fmtReachLong(Math.abs(d)) + (d > 0 ? " slower" : " faster") + " than usual"
+      : "Usually " + (digits ? base.toFixed(digits) : Math.round(base));
+    return '<span class="delta" data-dir="' + (better ? "good" : "bad") + '">' + arrow + " " + txt + "</span>";
+  }
+
+  function renderKpis() {
+    const P = PERIODS[period];
+    const S = summarise(P.nights), B = summarise(P.base);
+    const perNightAvg = (x, n) => x / n;
+    const slowest = [...S.urgent].sort((a, b) => b.reach - a.reach)[0];
+    const fmtCount = (x) => period === "night" ? String(x) : (x / S.n).toFixed(1);
+    const unitWord = period === "night" ? "" : "<small>per night</small>";
+
+    document.getElementById("kpis").innerHTML =
+      '<div class="card span-3 tile hero">' +
+        '<span class="lbl">Median time to reach the room</span>' +
+        '<span class="val">' + fmtReach(S.reachMed) + "</span>" +
+        delta(S.reachMed, B.reachMed, true, "time") +
+        '<span class="detail">Slowest ' + fmtReachLong(slowest.reach) + ", room " + roomOf(slowest.res) + ", " +
+          (period === "night" ? fmtTime(slowest.minute) : shortDay(slowest.night)) + "</span>" +
+      "</div>" +
+      '<div class="card span-3 tile">' +
+        '<span class="lbl">Urgent alerts</span>' +
+        '<span class="val">' + fmtCount(S.urgent.length) + unitWord + "</span>" +
+        delta(perNightAvg(S.urgent.length, S.n), perNightAvg(B.urgent.length, B.n), true, "n", 1) +
+        '<span class="detail">' + plural(S.falls, "possible fall") + " · " + plural(S.calls, "call button") + " · " + plural(S.assists, "colleague help call") + "</span>" +
+      "</div>" +
+      '<div class="card span-3 tile">' +
+        '<span class="lbl">Help called from outside the floor</span>' +
+        '<span class="val">' + S.escs.length + "</span>" +
+        delta(S.escs.length, B.escs.length / B.n * S.n, true, "n", period === "night" ? 1 : 0) +
+        '<span class="detail">Coordinator ' + S.coord + " · On-call nurse " + S.oncall + " · Ambulance " + S.amb + "</span>" +
+      "</div>" +
+      '<div class="card span-3 tile">' +
+        '<span class="lbl">Alerts per resident</span>' +
+        '<span class="val">' + S.perRes.toFixed(1) + (period === "night" ? "" : "<small>per night</small>") + "</span>" +
+        delta(S.perRes, B.perRes, true, "n", 1) +
+        '<span class="detail">Teton\'s published site average is 11.7 per resident per day</span>' +
+      "</div>";
+  }
+
+  // ================= render: residents who changed =================
+  function nightCount(res, i, kind) {
+    return perNight[i].filter((e) => e.res === res && (!kind || e.kind === kind)).length;
+  }
+
+  function sparkSvg(res, P) {
+    const ns = P.spark, w = 150, h = 30, pad = 4;
+    const vals = ns.map((i) => nightCount(res, i));
+    const max = Math.max(4, ...vals);
+    const x = (k) => pad + k * ((w - pad * 2) / (ns.length - 1));
+    const y = (v) => h - pad - (v / max) * (h - pad * 2);
+    const first = ns.indexOf(P.nights[0]);
+    const pts = vals.map((v, k) => x(k).toFixed(1) + "," + y(v).toFixed(1)).join(" ");
+    const lastV = vals[vals.length - 1];
+    return '<svg class="spark" width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + " " + h + '" aria-hidden="true">' +
+      (period !== "night" ? '<rect x="' + (x(first) - 2).toFixed(1) + '" y="0" width="' + (w - pad - x(first) + 4).toFixed(1) + '" height="' + h + '" rx="3" fill="var(--surface-2)"/>' : "") +
+      '<polyline points="' + pts + '" fill="none" stroke="var(--ink-3)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
+      '<circle cx="' + x(vals.length - 1).toFixed(1) + '" cy="' + y(lastV).toFixed(1) + '" r="4" fill="var(--ink)" stroke="var(--surface)" stroke-width="2"/>' +
+      "</svg>";
+  }
+
+  // Residents at risk today: every high-fall-risk resident is always listed;
+  // anyone else is pulled in when something unexpected happened in the period.
+  function renderRisk() {
+    const P = PERIODS[period];
+    const n = P.nights.length, nb = P.base.length;
+    const word = { restless: "Restless sleep", bedexit: "Out of bed", stillness: "Long still periods" };
+    const periodWord = { night: "night", week: "week", month: "month" }[period];
+    const rows = [];
+
+    for (const r of RESIDENTS) {
+      const evs = P.nights.flatMap((i) => perNight[i]).filter((e) => e.res === r);
+      const falls = evs.filter((e) => e.kind === "fall");
+      const calls = evs.filter((e) => e.kind === "call").length;
+      const base = sum(P.base.map((i) => nightCount(r, i))) / nb;
+      const cur = evs.length / n;
+      const silentNights = P.nights.filter((i) => nightCount(r, i) === 0 && base > 3);
+
+      // the routine event type that moved most against its own usual
+      let bestKind = null, bestScore = 0, bestCur = 0, bestBase = 0;
+      for (const kind of ["restless", "bedexit", "stillness"]) {
+        const c = sum(P.nights.map((i) => nightCount(r, i, kind))) / n;
+        const b = sum(P.base.map((i) => nightCount(r, i, kind))) / nb;
+        const score = (c - b) / Math.max(1, b);
+        if (c - b >= 1.5 && score > bestScore) { bestScore = score; bestKind = kind; bestCur = c; bestBase = b; }
+      }
+      const ratio = base ? cur / base : 0;
+      const kRatio = bestBase ? bestCur / bestBase : 0;
+      const unusual = !!bestKind && ((ratio >= 1.5 && cur - base >= 2.5) || (kRatio >= 2 && bestCur - bestBase >= (period === "night" ? 4 : 1.5)));
+
+      const high = r.risk === "high";
+      if (!high && !falls.length && !silentNights.length && !unusual) continue;
+
+      // five words at most; the rest belongs on the details page
+      let preview, score;
+      if (falls.length) {
+        const f = falls[falls.length - 1];
+        preview = period === "night" ? "Possible fall at " + fmtTime(f.minute) : "Possible fall, " + shortDay(f.night);
+        score = 100;
+      } else if (silentNights.length) {
+        preview = period === "night" ? "No sensor signal all night" : "No signal, " + shortDay(silentNights[silentNights.length - 1]);
+        score = 80;
+      } else if (unusual) {
+        preview = period === "night"
+          ? word[bestKind] + " " + Math.round(bestCur) + " times"
+          : word[bestKind] + " up " + kRatio.toFixed(1) + "×";
+        score = 50 + (high ? 10 : 0) + kRatio;
+      } else if (calls) {
+        preview = plural(calls, "call button") + " used";
+        score = 20 + calls;
+      } else {
+        preview = "Settled, as usual";
+        score = 10;
+      }
+
+      const flags = [];
+      if (falls.length) flags.push('<span class="kind" data-k="fall">' + ICON.fall + "Fall</span>");
+      if (silentNights.length) flags.push('<span class="kind" data-k="silent">' + ICON.silent + "Sensor check</span>");
+      if (unusual) flags.push('<span class="kind" data-k="up">' + ICON.up + "Unusual " + periodWord + "</span>");
+      if (high) flags.push('<span class="pill">High fall risk</span>');
+
+      rows.push({ r, preview, score, flags });
+    }
+    rows.sort((a, b) => b.score - a.score);
+
+    document.getElementById("risk-hint").textContent =
+      "High fall risk residents are always here. Anyone else joins when something unexpected happened " +
+      (period === "night" ? "last night." : "in the last " + plural(n, "night") + ".");
+
+    const sparkHead = "Events per night, last " + P.spark.length;
+    const lastHead = { night: "Last night", week: "Last 7 nights", month: "Last 30 nights" }[period];
+    document.getElementById("risk").innerHTML =
+      '<div class="risk-row risk-head" role="row">' +
+        '<span role="columnheader">Room</span><span role="columnheader">Resident</span>' +
+        '<span role="columnheader">Why on the list</span><span role="columnheader">' + lastHead + "</span>" +
+        '<span role="columnheader" class="spark-wrap">' + sparkHead + '</span><span role="columnheader"></span>' +
+      "</div>" +
+      rows.map((row) => {
+        const r = row.r;
+        const room = r.room === null ? "?" : (r.room.length > 4 ? '<span class="room-long">' + esc(r.room) + "</span>" : r.room);
+        return '<div class="risk-row" role="row">' +
+          '<span class="c-room" role="cell">' + room + "</span>" +
+          '<span class="c-who" role="cell">' + esc(r.name) + "</span>" +
+          '<span class="flags" role="cell">' + row.flags.join("") + "</span>" +
+          '<span class="c-what" role="cell">' + esc(row.preview) + "</span>" +
+          '<span class="spark-wrap" role="cell">' + sparkSvg(r, P) + "</span>" +
+          '<span role="cell"><button type="button" class="ghost details-btn" title="Opens the resident\'s night history. Not built in this study.">Details</button></span>' +
+          "</div>";
+      }).join("");
+  }
+
+  // ================= tooltip =================
+  const tip = document.getElementById("tip");
+  function showTip(ev, html) {
+    tip.innerHTML = html; tip.style.opacity = "1";
+    const pad = 14, w = tip.offsetWidth, h = tip.offsetHeight;
+    let x = ev.clientX + pad, y = ev.clientY - h - pad;
+    if (x + w > window.innerWidth - 8) x = ev.clientX - w - pad;
+    if (y < 8) y = ev.clientY + pad;
+    tip.style.left = x + "px"; tip.style.top = y + "px";
+  }
+  const hideTip = () => { tip.style.opacity = "0"; };
+  const tipRow = (color, label, v) => '<div class="t-r"><span>' + (color ? '<i class="sw" style="background:' + color + '"></i>' : "") + label + "</span><b>" + v + "</b></div>";
+
+  // ================= column chart =================
+  // stacked when series has several keys; bars capped at 24px; 4px rounded tops; 2px surface gaps
+  function columnChart(host, buckets, keys, opts) {
+    const W = Math.max(280, host.clientWidth), H = opts.height || 220;
+    const m = { t: 18, r: 8, b: 26, l: 34 };
+    const iw = W - m.l - m.r, ih = H - m.t - m.b;
+    const totals = buckets.map((b) => sum(keys.map((k) => b.v[k.key] || 0)));
+    const rawMax = Math.max(1, ...totals, opts.refValue || 0);
+    const step = niceStep(rawMax / 4);
+    const max = Math.ceil(rawMax / step) * step;
+    const y = (v) => m.t + ih - (v / max) * ih;
+    const band = iw / buckets.length;
+    const bw = Math.min(24, Math.max(4, band - 4));
+
+    let s = '<svg width="' + W + '" height="' + H + '" role="img" aria-label="' + esc(opts.aria) + '">';
+    for (let v = 0; v <= max; v += step) {
+      s += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="' + (v === 0 ? "var(--base)" : "var(--grid)") + '" stroke-width="1"/>';
+      s += '<text class="axis-text" x="' + (m.l - 8) + '" y="' + (y(v) + 4) + '" text-anchor="end">' + (opts.yFmt ? opts.yFmt(v) : v) + "</text>";
+    }
+    buckets.forEach((b, i) => {
+      const cx = m.l + band * i + band / 2;
+      let acc = 0;
+      const segs = keys.filter((k) => (b.v[k.key] || 0) > 0);
+      segs.forEach((k, si) => {
+        const v = b.v[k.key];
+        const y0 = y(acc), y1 = y(acc + v);
+        const top = si === segs.length - 1;
+        const gap = si > 0 ? 2 : 0;
+        const hgt = Math.max(0, y0 - y1 - gap);
+        if (hgt > 0) s += barPath(cx - bw / 2, y1, bw, hgt, top ? Math.min(4, hgt) : 0, k.color);
+        acc += v;
+      });
+      if (b.peak) s += '<text class="ann-text" x="' + cx + '" y="' + (y(totals[i]) - 6) + '" text-anchor="middle">' + esc(b.peak) + "</text>";
+      if (b.showLabel && (band >= 46 || buckets.length > 12 || i % 2 === 0)) s += '<text class="axis-text' + (opts.monoX ? " mono" : "") + '" x="' + cx + '" y="' + (H - 8) + '" text-anchor="middle">' + esc(b.label) + "</text>";
+      s += '<rect data-i="' + i + '" x="' + (m.l + band * i) + '" y="' + m.t + '" width="' + band + '" height="' + ih + '" fill="transparent"/>';
+    });
+    if (opts.refValue != null) {
+      s += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + y(opts.refValue) + '" y2="' + y(opts.refValue) + '" stroke="var(--ink-2)" stroke-width="1"/>';
+    }
+    s += "</svg>";
+    host.innerHTML = s;
+    host.querySelectorAll("rect[data-i]").forEach((r) => {
+      const b = buckets[Number(r.dataset.i)];
+      r.addEventListener("mousemove", (ev) => showTip(ev, opts.tip(b)));
+      r.addEventListener("mouseleave", hideTip);
+      r.addEventListener("click", (ev) => { ev.stopPropagation(); showTip(ev, opts.tip(b)); });
+    });
+  }
+  document.addEventListener("click", hideTip);
+  function barPath(x, y, w, h, r, fill) {
+    return '<path d="M' + x + "," + (y + h) + " V" + (y + r) + " Q" + x + "," + y + " " + (x + r) + "," + y +
+      " H" + (x + w - r) + " Q" + (x + w) + "," + y + " " + (x + w) + "," + (y + r) + " V" + (y + h) + ' Z" fill="' + fill + '"/>';
+  }
+  function niceStep(raw) {
+    const p = Math.pow(10, Math.floor(Math.log10(raw)));
+    const n = raw / p;
+    return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * p;
+  }
+
+  // ================= render: load =================
+  function renderLoad() {
+    const P = PERIODS[period];
+    const S = summarise(P.nights);
+    let buckets;
+    if (period === "night") {
+      buckets = range(0, 11).map((h) => {
+        const v = { now: 0, round: 0, later: 0 };
+        for (const e of perNight[LAST]) if (Math.floor(e.minute / 60) === h) v[KINDS[e.kind].tier]++;
+        return { label: hourLabel(h), long: fmtTime(h * 60) + " to " + fmtTime(h * 60 + 60), v, showLabel: true };
+      });
+    } else {
+      buckets = P.nights.map((i, k) => {
+        const v = { now: 0, round: 0, later: 0 };
+        for (const e of perNight[i]) v[KINDS[e.kind].tier]++;
+        return { label: period === "week" ? shortDay(i) : String(dateOf(i).getUTCDate()), long: longDay(i), v,
+          showLabel: period === "week" || k % 5 === 4 || k === P.nights.length - 1 };
+      });
+    }
+    const tot = (b) => b.v.now + b.v.round + b.v.later;
+    const peakIdx = buckets.reduce((bi, b, i) => tot(b) > tot(buckets[bi]) ? i : bi, 0);
+    buckets[peakIdx].peak = String(tot(buckets[peakIdx]));
+
+    document.getElementById("load-title").textContent = period === "night" ? "How heavy the night was" : "How heavy the nights were";
+    document.getElementById("load-hint").textContent = period === "night"
+      ? "Every alert, by hour, grouped by what the phone asked staff to do."
+      : "Every alert, by night, grouped by what the phone asked staff to do.";
+    document.getElementById("load-legend").innerHTML = TIERS.map((t) =>
+      '<span><i class="sw" style="background:' + t.color + '"></i>' + t.label + "</span>").join("");
+
+    const keys = [...TIERS].reverse().map((t) => ({ key: t.key, color: t.color }));
+    // Go now sits on the baseline: the alerts that cost a walk are read first
+    const stackKeys = [TIERS[0], TIERS[1], TIERS[2]].map((t) => ({ key: t.key, color: t.color }));
+    const draw = () => columnChart(document.getElementById("load-chart"), buckets, stackKeys, {
+      aria: "Alerts " + (period === "night" ? "per hour" : "per night") + ", stacked by Go now, Next round and Later",
+      monoX: period === "night",
+      tip: (b) => '<div class="t-h">' + esc(b.long) + "</div>" + TIERS.map((t) => tipRow(t.color, t.label, b.v[t.key])).join("") + tipRow("", "All alerts", tot(b))
+    });
+    draw();
+    redrawers.load = draw;
+
+    document.getElementById("load-table").innerHTML = '<table><thead><tr><th>' + (period === "night" ? "Hour" : "Night") + "</th>" +
+      TIERS.map((t) => '<th class="num">' + t.label + "</th>").join("") + '<th class="num">All</th></tr></thead><tbody>' +
+      buckets.map((b) => "<tr><td>" + esc(b.long) + "</td>" + TIERS.map((t) => '<td class="num">' + b.v[t.key] + "</td>").join("") + '<td class="num">' + tot(b) + "</td></tr>").join("") +
+      "</tbody></table>";
+
+    const perHourPerPerson = S.pushed / S.n / 2 / 12;
+    const busiest = period === "night" ? buckets[peakIdx].long : buckets[peakIdx].long;
+    document.getElementById("load-stats").innerHTML =
+      "<div><b>" + (period === "night" ? S.ev.length : Math.round(S.ev.length / S.n)) + "</b>" + (period === "night" ? "alerts in the night" : "alerts per night") + "</div>" +
+      "<div><b>" + perHourPerPerson.toFixed(1) + "</b>times an hour each phone buzzed</div>" +
+      "<div><b>" + esc(busiest) + "</b>busiest " + (period === "night" ? "hour" : "night") + "</div>";
+  }
+
+  // ================= last night: one bar per urgent alert, grouped by hour =================
+  function urgentHourChart(host, rows) {
+    const W = Math.max(280, host.clientWidth), H = 240;
+    const m = { t: 22, r: 8, b: 28, l: 34 };
+    const iw = W - m.l - m.r, ih = H - m.t - m.b;
+    const SLOW = 300;
+    const rawMax = Math.max(SLOW, ...rows.map((e) => e.reach));
+    const step = 120;
+    const max = Math.ceil(rawMax / step) * step;
+    const y = (v) => m.t + ih - (v / max) * ih;
+    const band = iw / 12;
+
+    let s = '<svg width="' + W + '" height="' + H + '" role="img" aria-label="Time to reach the room for each urgent alert last night, by hour">';
+    for (let v = 0; v <= max; v += step) {
+      s += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="' + (v === 0 ? "var(--base)" : "var(--grid)") + '"/>';
+      s += '<text class="axis-text" x="' + (m.l - 8) + '" y="' + (y(v) + 4) + '" text-anchor="end">' + (v / 60) + "m</text>";
+    }
+    s += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + y(SLOW) + '" y2="' + y(SLOW) + '" stroke="var(--ink-2)"/>';
+
+    const hits = [];
+    for (let h = 0; h < 12; h++) {
+      const x0 = m.l + band * h;
+      const inHour = rows.filter((e) => Math.floor(e.minute / 60) === h);
+      const k = inHour.length;
+      if (k) {
+        const gap = 4;
+        const bw = Math.max(6, Math.min(24, (band - 10 - gap * (k - 1)) / k));
+        const groupW = k * bw + (k - 1) * gap;
+        inHour.forEach((e, j) => {
+          const bx = x0 + band / 2 - groupW / 2 + j * (bw + gap);
+          const top = y(e.reach), hgt = y(0) - top;
+          s += barPath(bx, top, bw, hgt, Math.min(4, hgt), "var(--reach)");
+          s += '<text class="axis-text mono" x="' + (bx + bw / 2) + '" y="' + (top - 6) + '" text-anchor="middle">' + esc(roomOf(e.res)) + "</text>";
+          hits.push({ e, x: bx - gap / 2, w: bw + gap });
+        });
+      }
+      if (band >= 46 || h % 2 === 0)
+        s += '<text class="axis-text mono" x="' + (x0 + band / 2) + '" y="' + (H - 8) + '" text-anchor="middle">' + hourLabel(h) + "</text>";
+    }
+    hits.forEach((t, i) => {
+      s += '<rect data-u="' + i + '" x="' + t.x + '" y="' + m.t + '" width="' + Math.max(t.w, 28) + '" height="' + ih + '" fill="transparent"/>';
+    });
+    s += "</svg>";
+    host.innerHTML = s;
+
+    const tipFor = (e) => '<div class="t-h">' + fmtTime(e.minute) + " · Room " + esc(roomOf(e.res)) + "</div>" +
+      tipRow("var(--reach)", KINDS[e.kind].what, fmtReach(e.reach)) +
+      tipRow("", "Resident", esc(e.res.name)) +
+      tipRow("", 'Reached by <span class="tag-proposed">Proposed</span>', esc(PEOPLE[e.who] ? PEOPLE[e.who].full.split(" ")[0] : e.who)) +
+      (e.note ? '<div class="note" style="max-width:260px;margin-top:6px">' + esc(e.note) + "</div>" : "");
+    host.querySelectorAll("rect[data-u]").forEach((r) => {
+      const e = hits[Number(r.dataset.u)].e;
+      r.addEventListener("mousemove", (ev) => showTip(ev, tipFor(e)));
+      r.addEventListener("mouseleave", hideTip);
+      r.addEventListener("click", (ev) => { ev.stopPropagation(); showTip(ev, tipFor(e)); });
+    });
+  }
+
+  // ================= render: urgent =================
+  function renderUrgent() {
+    const P = PERIODS[period];
+    const S = summarise(P.nights);
+    const body = document.getElementById("urgent-body");
+    const tierColor = "var(--t-now)";
+
+    if (period === "night") {
+      document.getElementById("urgent-hint").textContent =
+        "Every Go now alert, placed in the hour it fired. Bar height is the time until the room saw someone walk in, with no tap needed. Tap a bar for what was found.";
+      const rows = [...S.urgent].sort((a, b) => a.minute - b.minute);
+      body.innerHTML =
+        '<div class="legend"><span><i class="sw" style="background:var(--reach)"></i>Time to reach the room, one bar per alert</span>' +
+        '<span><i style="display:inline-block;width:14px;height:0;border-top:1px solid var(--ink-2)"></i>Slow: over 5 minutes</span>' +
+        '<span>Room number above each bar</span></div>' +
+        '<div class="chart" id="reach-chart"></div>' +
+        '<ul class="sublist"><h3>Help from outside the floor</h3>' +
+        S.escs.sort((a, b) => a.minute - b.minute).map((x) =>
+          '<li><span class="mono">' + fmtTime(x.minute) + '</span><span class="mono">' + roomOf(x.res) + "</span><span>" +
+          ({ coord: "Mette, night coordinator, came up to help", oncall: "Lars, on-call nurse, phoned about the fall", ambulance: "Ambulance" }[x.level]) +
+          "</span><span></span></li>").join("") + "</ul>";
+      const draw = () => urgentHourChart(document.getElementById("reach-chart"), rows);
+      draw();
+      redrawers.reach = draw;
+      return;
+    }
+
+    document.getElementById("urgent-hint").textContent =
+      "Median time from a Go now alert to someone entering the room, per night. Lower is better.";
+    const buckets = P.nights.map((i, k) => {
+      const u = perNight[i].filter((e) => KINDS[e.kind].tier === "now");
+      return { label: period === "week" ? shortDay(i) : String(dateOf(i).getUTCDate()), long: longDay(i),
+        v: { reach: median(u.map((e) => e.reach)) || 0 }, n: u.length, max: Math.max(...u.map((e) => e.reach)),
+        showLabel: period === "week" || k % 5 === 4 || k === P.nights.length - 1 };
+    });
+    body.innerHTML = '<div class="legend"><span><i class="sw" style="background:var(--reach)"></i>Median per night</span>' +
+      '<span><i style="display:inline-block;width:14px;height:0;border-top:1px solid var(--ink-2)"></i>Median for the whole period, ' + fmtReach(S.reachMed) + "</span></div>" +
+      '<div class="chart" id="reach-chart"></div>';
+    const draw = () => columnChart(document.getElementById("reach-chart"), buckets, [{ key: "reach", color: "var(--reach)" }], {
+      aria: "Median time to reach the room per night",
+      height: 180,
+      yFmt: (v) => Math.round(v / 60) + "m",
+      refValue: S.reachMed, refLabel: "Median for the period " + fmtReach(S.reachMed),
+      tip: (b) => '<div class="t-h">' + esc(b.long) + "</div>" + (b.n
+        ? tipRow("var(--reach)", "Median to reach", fmtReach(b.v.reach)) + tipRow("", "Slowest", fmtReach(b.max)) + tipRow("", "Urgent alerts", b.n)
+        : '<div class="t-r"><span>No urgent alerts this night</span></div>')
+    });
+    draw();
+    redrawers.reach = draw;
+
+    const slow = [...S.urgent].sort((a, b) => b.reach - a.reach).slice(0, 4);
+    body.insertAdjacentHTML("beforeend",
+      '<ul class="sublist"><h3>Slowest to reach</h3>' +
+      slow.map((e) => '<li><span class="mono">' + shortDay(e.night) + " " + fmtTime(e.minute) + '</span><span class="mono">' + roomOf(e.res) + "</span><span>" +
+        KINDS[e.kind].what + ", " + esc(e.res.name) + '</span><span class="mono r">' + fmtReach(e.reach) + "</span></li>").join("") + "</ul>");
+  }
+
+  // ================= wiring =================
+  const redrawers = {};
+  function renderAll() {
+    renderHeader(); renderStaff(); renderKpis(); renderRisk(); renderUrgent(); renderLoad();
+  }
+
+  document.querySelectorAll("[data-period]").forEach((b) => b.addEventListener("click", () => {
+    period = b.dataset.period;
+    document.querySelectorAll("[data-period]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    try { localStorage.setItem("handover-period", period); } catch (e) {}
+    delete redrawers.reach;
+    renderAll();
+  }));
+
+  document.querySelectorAll("[data-table-toggle]").forEach((b) => b.addEventListener("click", () => {
+    const card = document.getElementById(b.dataset.tableToggle);
+    const on = card.dataset.table !== "true";
+    card.dataset.table = String(on);
+    b.textContent = on ? "Chart" : "Table";
+  }));
+
+  // theme: follows the OS until the viewer picks
+  const root = document.documentElement;
+  const isDark = () => root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  const syncThemeLabel = () => { document.getElementById("theme-label").textContent = isDark() ? "Light" : "Dark"; };
+  try { const t = localStorage.getItem("handover-theme"); if (t) root.dataset.theme = t; } catch (e) {}
+  document.getElementById("theme-btn").addEventListener("click", () => {
+    root.dataset.theme = isDark() ? "light" : "dark";
+    try { localStorage.setItem("handover-theme", root.dataset.theme); } catch (e) {}
+    syncThemeLabel();
+  });
+  syncThemeLabel();
+
+  try {
+    const p = localStorage.getItem("handover-period");
+    if (p && PERIODS[p]) { period = p; document.querySelectorAll("[data-period]").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.period === p))); }
+  } catch (e) {}
+
+  let rt;
+  window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => Object.values(redrawers).forEach((f) => f()), 120); });
+
+  renderAll();
+})();
+</script>
+</body>
+</html>
